@@ -1,916 +1,656 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hermes 任務優先序排程器</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>任務優先序決策器 🗂️</title>
   <style>
     :root {
-      --bg: #f8f9fa;
-      --card-bg: #ffffff;
-      --text: #212529;
-      --text-secondary: #6c757d;
-      --border: #dee2e6;
-      --p1-color: #dc3545;
-      --p1-bg: #fff5f5;
-      --p2-color: #fd7e14;
-      --p2-bg: #fff8f0;
-      --p3-color: #20c997;
-      --p3-bg: #f0fffd;
-      --accent: #6c5ce7;
-      --accent-hover: #5a4bd1;
-      --shadow: 0 2px 8px rgba(0,0,0,0.08);
-      --shadow-hover: 0 4px 16px rgba(0,0,0,0.12);
-    }
-
-    [data-theme="dark"] {
-      --bg: #1a1a2e;
-      --card-bg: #16213e;
-      --text: #eaeaea;
-      --text-secondary: #a0a0a0;
-      --border: #2d3a5a;
-      --p1-bg: #2d1f2f;
-      --p2-bg: #2d2a1f;
-      --p3-bg: #1f2d2a;
-      --shadow: 0 2px 8px rgba(0,0,0,0.3);
-      --shadow-hover: 0 4px 16px rgba(0,0,0,0.4);
+      --bg: #0f1117;
+      --card-bg: #1c1f26;
+      --card-hover: #252936;
+      --border: #2a2d3a;
+      --text: #e8eaf0;
+      --subtext: #8b8fa3;
+      --col1: #ef4444;
+      --col2: #f59e0b;
+      --col3: #22c55e;
+      --p1-header: rgba(239,68,68,0.15);
+      --p2-header: rgba(245,158,11,0.15);
+      --p3-header: rgba(34,197,94,0.15);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: var(--bg);
       color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       min-height: 100vh;
-      transition: background 0.3s, color 0.3s;
+      display: flex;
+      flex-direction: column;
     }
 
     header {
-      background: var(--card-bg);
+      background: rgba(13,15,23,0.95);
       border-bottom: 1px solid var(--border);
       padding: 16px 24px;
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
       position: sticky;
       top: 0;
       z-index: 100;
-      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
     }
 
-    header h1 {
-      font-size: 1.25rem;
-      font-weight: 600;
+    .header-left {
       display: flex;
       align-items: center;
-      gap: 8px;
-    }
-
-    header h1 span { font-size: 1.5rem; }
-
-    .theme-toggle {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 8px 12px;
-      cursor: pointer;
-      font-size: 1rem;
-      transition: all 0.2s;
-    }
-    .theme-toggle:hover { background: var(--border); }
-
-    .container {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 24px;
-    }
-
-    .controls {
-      display: flex;
       gap: 12px;
-      margin-bottom: 24px;
-      flex-wrap: wrap;
     }
 
-    .controls input {
-      flex: 1;
-      min-width: 200px;
-      padding: 12px 16px;
-      border: 2px solid var(--border);
-      border-radius: 10px;
-      font-size: 1rem;
-      background: var(--card-bg);
-      color: var(--text);
-      transition: border-color 0.2s;
+    .header-left h1 {
+      font-size: 18px;
+      font-weight: 700;
     }
-    .controls input:focus {
-      outline: none;
-      border-color: var(--accent);
+
+    .header-left .subtitle {
+      font-size: 12px;
+      color: var(--subtext);
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
     }
 
     .btn {
-      padding: 12px 20px;
+      padding: 8px 18px;
+      border-radius: 8px;
       border: none;
-      border-radius: 10px;
-      font-size: 0.95rem;
-      font-weight: 500;
+      font-size: 13px;
+      font-weight: 600;
       cursor: pointer;
       transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      gap: 6px;
     }
 
     .btn-primary {
-      background: var(--accent);
-      color: white;
+      background: #6366f1;
+      color: #fff;
     }
-    .btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
+    .btn-primary:hover { background: #5558e3; }
 
     .btn-secondary {
-      background: var(--card-bg);
+      background: var(--border);
       color: var(--text);
-      border: 2px solid var(--border);
     }
-    .btn-secondary:hover { border-color: var(--accent); }
+    .btn-secondary:hover { background: #3a3d4a; }
 
-    .btn-ai {
-      background: linear-gradient(135deg, #6c5ce7, #a29bfe);
-      color: white;
+    .btn-reset {
+      background: transparent;
+      color: var(--subtext);
+      border: 1px solid var(--border);
+      padding: 6px 14px;
+      font-size: 12px;
     }
-    .btn-ai:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(108,92,231,0.4); }
+    .btn-reset:hover { color: var(--text); border-color: #444; }
+
+    main {
+      flex: 1;
+      padding: 24px;
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+    }
 
     .columns {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 20px;
-    }
-
-    @media (max-width: 900px) {
-      .columns { grid-template-columns: 1fr; }
+      align-items: start;
     }
 
     .column {
       background: var(--card-bg);
-      border-radius: 16px;
-      padding: 16px;
-      min-height: 400px;
-      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
     }
 
-    .column-header {
+    .col-header {
+      padding: 14px 18px;
+      font-size: 13px;
+      font-weight: 700;
       display: flex;
       align-items: center;
-      gap: 10px;
-      margin-bottom: 16px;
-      padding-bottom: 12px;
-      border-bottom: 2px solid var(--border);
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
     }
 
-    .column-p1 .column-header { border-color: var(--p1-color); }
-    .column-p2 .column-header { border-color: var(--p2-color); }
-    .column-p3 .column-header { border-color: var(--p3-color); }
+    .col-header.p1 { background: var(--p1-header); color: var(--col1); }
+    .col-header.p2 { background: var(--p2-header); color: var(--col2); }
+    .col-header.p3 { background: var(--p3-header); color: var(--col3); }
 
-    .column-badge {
-      padding: 4px 12px;
+    .col-badge {
+      font-size: 11px;
+      padding: 2px 8px;
       border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: white;
-    }
-    .column-p1 .column-badge { background: var(--p1-color); }
-    .column-p2 .column-badge { background: var(--p2-color); }
-    .column-p3 .column-badge { background: var(--p3-color); }
-
-    .column-title {
-      font-size: 1rem;
+      background: rgba(255,255,255,0.1);
       font-weight: 600;
     }
 
-    .column-count {
-      margin-left: auto;
-      background: var(--bg);
-      padding: 2px 10px;
-      border-radius: 12px;
-      font-size: 0.85rem;
-      color: var(--text-secondary);
-    }
-
-    .cards {
-      min-height: 300px;
+    .col-body {
+      padding: 12px;
+      min-height: 200px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
     }
 
     .card {
       background: var(--bg);
-      border: 2px solid var(--border);
-      border-radius: 12px;
-      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
       cursor: grab;
-      transition: all 0.2s;
-      position: relative;
+      transition: border-color 0.2s, background 0.2s, transform 0.15s;
+      user-select: none;
     }
-    .card:hover {
-      border-color: var(--accent);
-      box-shadow: var(--shadow-hover);
-      transform: translateY(-2px);
-    }
-    .card.dragging {
-      opacity: 0.5;
-      cursor: grabbing;
-    }
-    .card.drag-over { border-color: var(--accent); background: rgba(108,92,231,0.05); }
 
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 8px;
+    .card:active { cursor: grabbing; }
+
+    .card:hover {
+      border-color: #444;
+      background: var(--card-hover);
+    }
+
+    .card.dragging {
+      opacity: 0.4;
+      transform: scale(0.97);
+    }
+
+    .card.drag-over {
+      border-color: #6366f1;
+      background: rgba(99,102,241,0.1);
     }
 
     .card-title {
+      font-size: 14px;
       font-weight: 600;
-      font-size: 0.95rem;
-      line-height: 1.4;
-      flex: 1;
+      color: var(--text);
+      margin-bottom: 4px;
     }
-
-    .card-delete {
-      background: none;
-      border: none;
-      color: var(--text-secondary);
-      cursor: pointer;
-      font-size: 1.1rem;
-      padding: 2px 6px;
-      border-radius: 4px;
-      transition: all 0.2s;
-    }
-    .card-delete:hover { background: #dc3545; color: white; }
 
     .card-meta {
-      font-size: 0.8rem;
-      color: var(--text-secondary);
+      font-size: 11px;
+      color: var(--subtext);
       display: flex;
-      gap: 12px;
+      gap: 8px;
+      flex-wrap: wrap;
     }
 
-    .card-description {
-      margin-top: 8px;
-      font-size: 0.85rem;
-      color: var(--text-secondary);
-      line-height: 1.5;
+    .card-tag {
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.07);
     }
 
-    .empty-state {
-      text-align: center;
-      padding: 40px 20px;
-      color: var(--text-secondary);
-    }
-    .empty-state span { font-size: 3rem; display: block; margin-bottom: 10px; }
+    .card-tag.p1-tag { color: var(--col1); background: rgba(239,68,68,0.15); }
+    .card-tag.p2-tag { color: var(--col2); background: rgba(245,158,11,0.15); }
+    .card-tag.p3-tag { color: var(--col3); background: rgba(34,197,94,0.15); }
 
-    /* AI Review Modal */
+    .add-card-btn {
+      width: 100%;
+      padding: 10px;
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      background: transparent;
+      color: var(--subtext);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .add-card-btn:hover { border-color: #6366f1; color: #6366f1; }
+
+    /* Modal for adding/editing cards */
     .modal-overlay {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.6);
-      z-index: 1000;
-      justify-content: center;
+      background: rgba(0,0,0,0.7);
+      z-index: 200;
       align-items: center;
-      padding: 20px;
+      justify-content: center;
+      padding: 16px;
     }
+
     .modal-overlay.active { display: flex; }
 
     .modal {
       background: var(--card-bg);
-      border-radius: 16px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
       width: 100%;
-      max-width: 600px;
-      max-height: 80vh;
-      overflow-y: auto;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      max-width: 480px;
     }
 
-    .modal-header {
-      padding: 20px 24px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      position: sticky;
-      top: 0;
-      background: var(--card-bg);
-    }
-    .modal-header h2 { font-size: 1.1rem; }
-
-    .modal-close {
-      background: none;
-      border: none;
-      font-size: 1.5rem;
-      cursor: pointer;
-      color: var(--text-secondary);
-    }
-    .modal-close:hover { color: var(--text); }
-
-    .modal-body { padding: 24px; }
-
-    .review-section {
-      margin-bottom: 20px;
-    }
-    .review-section h3 {
-      font-size: 0.9rem;
-      color: var(--text-secondary);
-      margin-bottom: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .review-item {
-      background: var(--bg);
-      border-radius: 10px;
-      padding: 14px;
-      margin-bottom: 10px;
-    }
-    .review-item.positive { border-left: 4px solid #28a745; }
-    .review-item.warning { border-left: 4px solid #fd7e14; }
-    .review-item.suggestion { border-left: 4px solid var(--accent); }
-
-    .review-badge {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      margin-right: 8px;
-    }
-    .review-badge.positive { background: #d4edda; color: #155724; }
-    .review-badge.warning { background: #fff3cd; color: #856404; }
-    .review-badge.suggestion { background: #e8daef; color: #5a3d7a; }
-
-    .ai-thinking {
-      text-align: center;
-      padding: 40px;
-      color: var(--text-secondary);
-    }
-    .ai-thinking .spinner {
-      width: 40px;
-      height: 40px;
-      border: 3px solid var(--border);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin: 0 auto 16px;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* Prompt Output */
-    .prompt-output {
-      background: #1e1e2e;
-      color: #cdd6f4;
-      border-radius: 10px;
-      padding: 16px;
-      font-family: 'Monaco', 'Menlo', monospace;
-      font-size: 0.85rem;
-      line-height: 1.6;
-      white-space: pre-wrap;
-      word-break: break-all;
-      max-height: 200px;
-      overflow-y: auto;
-      margin-top: 12px;
-    }
-
-    .copy-btn {
-      background: #313244;
-      color: #cdd6f4;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.85rem;
-      margin-top: 10px;
-      transition: background 0.2s;
-    }
-    .copy-btn:hover { background: #45475a; }
-
-    /* Output Section */
-    .output-section {
-      margin-top: 24px;
-      display: none;
-    }
-    .output-section.active { display: block; }
-
-    .output-box {
-      background: var(--card-bg);
-      border: 2px solid var(--border);
-      border-radius: 16px;
-      padding: 20px;
-    }
-    .output-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    .modal h2 {
+      font-size: 16px;
       margin-bottom: 16px;
     }
-    .output-header h3 {
-      font-size: 1rem;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+
+    .modal input, .modal textarea, .modal select {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+      margin-bottom: 10px;
     }
 
-    .final-prompt {
-      background: #1e1e2e;
-      color: #cdd6f4;
+    .modal input:focus, .modal textarea:focus, .modal select:focus {
+      outline: none;
+      border-color: #6366f1;
+    }
+
+    .modal textarea { resize: vertical; min-height: 80px; }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 8px;
+    }
+
+    /* Output panel */
+    #output-panel {
+      display: none;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      margin-top: 24px;
+    }
+
+    #output-panel.active { display: block; }
+
+    .output-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .output-header h2 {
+      font-size: 15px;
+      color: var(--text);
+    }
+
+    .output-content {
+      background: var(--bg);
+      border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 16px;
-      font-family: 'Monaco', 'Menlo', monospace;
-      font-size: 0.85rem;
-      line-height: 1.6;
+      padding: 14px;
+      font-size: 13px;
+      line-height: 1.7;
+      color: #c4c9d8;
       white-space: pre-wrap;
-      word-break: break-all;
       max-height: 400px;
       overflow-y: auto;
+      margin-bottom: 12px;
+    }
+
+    .copy-success {
+      color: var(--col3);
+      font-size: 12px;
+      display: none;
+      margin-left: 12px;
+    }
+
+    /* Instruction banner */
+    .instruction {
+      background: rgba(99,102,241,0.1);
+      border: 1px solid rgba(99,102,241,0.3);
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      color: #a5b4fc;
+    }
+
+    @media (max-width: 768px) {
+      .columns { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1><span>📋</span> Hermes 任務優先序排程器</h1>
-    <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
-  </header>
 
-  <div class="container">
-    <div class="controls">
-      <input type="text" id="taskInput" placeholder="輸入新任務...（按 Enter 新增）" onkeypress="handleKeypress(event)">
-      <select id="prioritySelect" style="padding: 12px; border: 2px solid var(--border); border-radius: 10px; background: var(--card-bg); color: var(--text); font-size: 1rem;">
-        <option value="p1">🔥 P1 - 最重要</option>
-        <option value="p2">⭐ P2 - 重要</option>
-        <option value="p3">📌 P3 - 一般</option>
-      </select>
-      <button class="btn btn-primary" onclick="addTask()">➕ 新增任務</button>
-      <button class="btn btn-secondary" onclick="loadSampleTasks()">📝 載入範例</button>
+<header>
+  <div class="header-left">
+    <div>📋</div>
+    <div>
+      <h1>任務優先序決策器</h1>
+      <div class="subtitle">拖曳調整優先順序，產出結構化 Prompt</div>
     </div>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-reset" onclick="resetAll()">🔄 清空全部</button>
+    <button class="btn btn-secondary" onclick="openAddModal()">+ 新增工作</button>
+    <button class="btn btn-primary" onclick="generatePrompt()">📌 確定提交</button>
+  </div>
+</header>
 
-    <div class="columns">
-      <div class="column column-p1" ondragover="handleDragOver(event)" ondrop="handleDrop(event, 'p1')" ondragleave="handleDragLeave(event)">
-        <div class="column-header">
-          <span class="column-badge">P1</span>
-          <span class="column-title">🔥 最重要</span>
-          <span class="column-count" id="p1Count">0</span>
-        </div>
-        <div class="cards" id="p1Cards"></div>
+<main>
+  <div class="instruction">
+    💡 操作說明：點「新增工作」新增卡片 → 拖曳卡片到不同優先級欄位 → 在同一欄內上下拖曳調整順序 → 完成後按「確定提交」產生 Prompt
+  </div>
+
+  <div class="columns">
+    <div class="column">
+      <div class="col-header p1">
+        🔴 第一優先
+        <span class="col-badge" id="count-p1">0</span>
       </div>
-
-      <div class="column column-p2" ondragover="handleDragOver(event)" ondrop="handleDrop(event, 'p2')" ondragleave="handleDragLeave(event)">
-        <div class="column-header">
-          <span class="column-badge">P2</span>
-          <span class="column-title">⭐ 重要</span>
-          <span class="column-count" id="p2Count">0</span>
-        </div>
-        <div class="cards" id="p2Cards"></div>
+      <div class="col-body" id="col-p1" data-priority="1" ondragover="onDragOver(event)" ondrop="onDrop(event)" ondragleave="onDragLeave(event)">
       </div>
-
-      <div class="column column-p3" ondragover="handleDragOver(event)" ondrop="handleDrop(event, 'p3')" ondragleave="handleDragLeave(event)">
-        <div class="column-header">
-          <span class="column-badge">P3</span>
-          <span class="column-title">📌 一般</span>
-          <span class="column-count" id="p3Count">0</span>
-        </div>
-        <div class="cards" id="p3Cards"></div>
+      <div style="padding:0 12px 12px">
+        <button class="add-card-btn" onclick="openAddModal(1)">+ 新增到此欄</button>
       </div>
     </div>
 
-    <div class="output-section" id="outputSection">
-      <div class="output-box">
-        <div class="output-header">
-          <h3>✅ 最終優先序 Prompt</h3>
-          <button class="btn btn-primary" onclick="regeneratePrompt()">🔄 重新生成</button>
-        </div>
-        <div class="final-prompt" id="finalPrompt"></div>
-        <button class="copy-btn" onclick="copyPrompt()">📋 複製 Prompt</button>
+    <div class="column">
+      <div class="col-header p2">
+        🟡 第二優先
+        <span class="col-badge" id="count-p2">0</span>
+      </div>
+      <div class="col-body" id="col-p2" data-priority="2" ondragover="onDragOver(event)" ondrop="onDrop(event)" ondragleave="onDragLeave(event)">
+      </div>
+      <div style="padding:0 12px 12px">
+        <button class="add-card-btn" onclick="openAddModal(2)">+ 新增到此欄</button>
+      </div>
+    </div>
+
+    <div class="column">
+      <div class="col-header p3">
+        🟢 第三優先
+        <span class="col-badge" id="count-p3">0</span>
+      </div>
+      <div class="col-body" id="col-p3" data-priority="3" ondragover="onDragOver(event)" ondrop="onDrop(event)" ondragleave="onDragLeave(event)">
+      </div>
+      <div style="padding:0 12px 12px">
+        <button class="add-card-btn" onclick="openAddModal(3)">+ 新增到此欄</button>
       </div>
     </div>
   </div>
 
-  <!-- AI Review Modal -->
-  <div class="modal-overlay" id="aiModal">
-    <div class="modal">
-      <div class="modal-header">
-        <h2>🤖 AI 審核建議</h2>
-        <button class="modal-close" onclick="closeModal()">×</button>
-      </div>
-      <div class="modal-body" id="modalBody">
-        <div class="ai-thinking">
-          <div class="spinner"></div>
-          <p>AI 正在分析任務優先序...</p>
-        </div>
+  <div id="output-panel">
+    <div class="output-header">
+      <h2>📋 產出 Prompt（可直接貼回給我）</h2>
+      <div>
+        <button class="btn btn-secondary" onclick="copyPrompt()" style="padding:6px 14px;font-size:12px">📋 複製</button>
+        <span class="copy-success" id="copy-msg">✅ 已複製</span>
       </div>
     </div>
+    <div class="output-content" id="prompt-output"></div>
   </div>
+</main>
 
-  <script>
-    // State
-    let tasks = {
-      p1: [],
-      p2: [],
-      p3: []
-    };
-    let draggedCard = null;
-    let draggedFrom = null;
+<!-- Add/Edit Card Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h2 id="modal-title">新增工作</h2>
+    <input type="hidden" id="edit-id" value="" />
+    <input type="hidden" id="edit-priority" value="" />
+    <input id="card-title" type="text" placeholder="工作標題（必填）" />
+    <textarea id="card-desc" placeholder="詳細說明（可選）"></textarea>
+    <select id="card-tag">
+      <option value="">選擇標籤（可選）</option>
+      <option value="技術">技術</option>
+      <option value="管理">管理</option>
+      <option value="文件">文件</option>
+      <option value="測試">測試</option>
+      <option value="部署">部署</option>
+      <option value="研究">研究</option>
+      <option value="設計">設計</option>
+      <option value="其他">其他</option>
+    </select>
+    <div class="modal-actions">
+      <button class="btn btn-reset" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveCard()">儲存</button>
+    </div>
+  </div>
+</div>
 
-    // Theme
-    function toggleTheme() {
-      const html = document.documentElement;
-      const current = html.getAttribute('data-theme');
-      const next = current === 'dark' ? 'light' : 'dark';
-      html.setAttribute('data-theme', next);
-      document.querySelector('.theme-toggle').textContent = next === 'dark' ? '☀️' : '🌙';
-      localStorage.setItem('theme', next);
+<script>
+// ── State ──────────────────────────────────────────────────────────────────────
+let cards = [];
+let draggedCardId = null;
+
+// ── Storage ────────────────────────────────────────────────────────────────────
+function saveState() {
+  localStorage.setItem('prio_cards', JSON.stringify(cards));
+}
+
+function loadState() {
+  const raw = localStorage.getItem('prio_cards');
+  if (raw) {
+    cards = JSON.parse(raw);
+  } else {
+    // Sample starter cards
+    cards = [
+      { id: 'sample1', title: '分析資料庫備份策略', desc: '評估 Vercel Postgres vs Supabase vs Mac Mini 自托管', tag: '研究', priority: 2 },
+      { id: 'sample2', title: '設計 CaloScanAi 登入流程', desc: '含註冊、JWT、密碼重置', tag: '技術', priority: 1 },
+      { id: 'sample3', title: '建立資料庫 Schema', desc: 'Users、FoodLogs、BarcodeDictionary、DailyQuotes', tag: '技術', priority: 1 },
+      { id: 'sample4', title: '寫 README.md', desc: '專案說明文件，含安裝與使用方式', tag: '文件', priority: 3 },
+    ];
+  }
+  renderAll();
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function renderAll() {
+  const p1 = cards.filter(c => c.priority === 1);
+  const p2 = cards.filter(c => c.priority === 2);
+  const p3 = cards.filter(c => c.priority === 3);
+  document.getElementById('count-p1').textContent = p1.length;
+  document.getElementById('count-p2').textContent = p2.length;
+  document.getElementById('count-p3').textContent = p3.length;
+  document.getElementById('col-p1').innerHTML = renderCards(p1);
+  document.getElementById('col-p2').innerHTML = renderCards(p2);
+  document.getElementById('col-p3').innerHTML = renderCards(p3);
+}
+
+function renderCards(list) {
+  return list.map(c => `
+    <div class="card" draggable="true" data-id="${c.id}"
+         ondragstart="onDragStart(event)" ondragend="onDragEnd(event)"
+         ondblclick="editCard('${c.id}')">
+      <div class="card-title">${escapeHtml(c.title)}</div>
+      ${(c.desc||c.tag) ? `
+      <div class="card-meta">
+        ${c.tag ? `<span class="card-tag">${escapeHtml(c.tag)}</span>` : ''}
+        ${c.desc ? `<span>${escapeHtml(c.desc.slice(0,40))}${c.desc.length>40?'...':''}</span>` : ''}
+      </div>` : ''}
+    </div>`).join('');
+}
+
+function escapeHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+
+// ── Drag & Drop ────────────────────────────────────────────────────────────────
+function onDragStart(e) {
+  draggedCardId = e.currentTarget.dataset.id;
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function onDragEnd(e) {
+  e.currentTarget.classList.remove('dragging');
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('drag-over'));
+  draggedCardId = null;
+}
+
+function onDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+}
+
+function onDragLeave(e) {
+  // nothing special needed
+}
+
+function onDrop(e) {
+  e.preventDefault();
+  const targetCol = e.currentTarget;
+  const newPriority = parseInt(targetCol.dataset.priority);
+  const card = cards.find(c => c.id === draggedCardId);
+  if (!card) return;
+  card.priority = newPriority;
+  saveState();
+  renderAll();
+}
+
+// ── Modal ─────────────────────────────────────────────────────────────────────
+function openAddModal(priority) {
+  document.getElementById('modal-title').textContent = '新增工作';
+  document.getElementById('edit-id').value = '';
+  document.getElementById('edit-priority').value = priority || '';
+  document.getElementById('card-title').value = '';
+  document.getElementById('card-desc').value = '';
+  document.getElementById('card-tag').value = '';
+  document.getElementById('modal').classList.add('active');
+  document.getElementById('card-title').focus();
+}
+
+function editCard(id) {
+  const card = cards.find(c => c.id === id);
+  if (!card) return;
+  document.getElementById('modal-title').textContent = '編輯工作';
+  document.getElementById('edit-id').value = id;
+  document.getElementById('edit-priority').value = card.priority;
+  document.getElementById('card-title').value = card.title;
+  document.getElementById('card-desc').value = card.desc || '';
+  document.getElementById('card-tag').value = card.tag || '';
+  document.getElementById('modal').classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('active');
+}
+
+function saveCard() {
+  const title = document.getElementById('card-title').value.trim();
+  if (!title) { alert('請輸入工作標題'); return; }
+
+  const id = document.getElementById('edit-id').value;
+  const priority = parseInt(document.getElementById('edit-priority').value) || 2;
+  const desc = document.getElementById('card-desc').value.trim();
+  const tag = document.getElementById('card-tag').value;
+
+  if (id) {
+    const card = cards.find(c => c.id === id);
+    if (card) {
+      card.title = title;
+      card.desc = desc;
+      card.tag = tag;
+      card.priority = priority;
     }
-
-    // Init theme
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-    document.querySelector('.theme-toggle').textContent = savedTheme === 'dark' ? '☀️' : '🌙';
-
-    // Load from localStorage
-    function loadTasks() {
-      const saved = localStorage.getItem('hermes-tasks');
-      if (saved) {
-        tasks = JSON.parse(saved);
-        renderAll();
-      }
-    }
-
-    function saveTasks() {
-      localStorage.setItem('hermes-tasks', JSON.stringify(tasks));
-    }
-
-    // Task operations
-    function generateId() {
-      return Date.now().toString(36) + Math.random().toString(36).substr(2);
-    }
-
-    function addTask() {
-      const input = document.getElementById('taskInput');
-      const priority = document.getElementById('prioritySelect').value;
-      const text = input.value.trim();
-      
-      if (!text) return alert('請輸入任務內容');
-
-      const task = {
-        id: generateId(),
-        title: text,
-        description: '',
-        createdAt: new Date().toISOString()
-      };
-
-      tasks[priority].push(task);
-      input.value = '';
-      saveTasks();
-      renderColumn(priority);
-      updateCounts();
-    }
-
-    function handleKeypress(e) {
-      if (e.key === 'Enter') addTask();
-    }
-
-    function deleteTask(id) {
-      for (const p of ['p1', 'p2', 'p3']) {
-        tasks[p] = tasks[p].filter(t => t.id !== id);
-      }
-      saveTasks();
-      renderAll();
-    }
-
-    function loadSampleTasks() {
-      if (tasks.p1.length + tasks.p2.length + tasks.p3.length > 0) {
-        if (!confirm('確定要載入範例任務嗎？現有任務會被取代。')) return;
-      }
-
-      tasks = {
-        p1: [
-          { id: generateId(), title: '建立 GitHub Repository 並初始化', description: '建立 CaloScanAi_Hermes 和 Hermes_HTML 兩個 Repo', createdAt: new Date().toISOString() },
-          { id: generateId(), title: '設計資料庫 Schema', description: 'Users, FoodLogs, BarcodeDictionary, DailyQuotes', createdAt: new Date().toISOString() },
-          { id: generateId(), title: '撰寫 Docker Compose 設定檔', description: 'Next.js + PostgreSQL + Volume 設定', createdAt: new Date().toISOString() }
-        ],
-        p2: [
-          { id: generateId(), title: '實作會員登入/註冊功能', description: 'JWT 或 Session 機制', createdAt: new Date().toISOString() },
-          { id: generateId(), title: '串接 AI Vision API', description: '食物照片熱量辨識', createdAt: new Date().toISOString() },
-          { id: generateId(), title: '建立備份腳本', description: '每日自動備份 SQL 格式', createdAt: new Date().toISOString() }
-        ],
-        p3: [
-          { id: generateId(), title: '深色/亮色模式切換', description: 'UI 優化', createdAt: new Date().toISOString() },
-          { id: generateId(), title: '365 句鼓勵語錄', description: '資料庫預載', createdAt: new Date().toISOString() },
-          { id: generateId(), title: '斗內 (Donation) 按鈕', description: '金流串接', createdAt: new Date().toISOString() }
-        ]
-      };
-      saveTasks();
-      renderAll();
-    }
-
-    // Drag and Drop
-    function handleDragStart(e, taskId, fromPriority) {
-      draggedCard = taskId;
-      draggedFrom = fromPriority;
-      e.target.classList.add('dragging');
-      e.dataTransfer.effectAllowed = 'move';
-    }
-
-    function handleDragOver(e) {
-      e.preventDefault();
-      e.currentTarget.classList.add('drag-over');
-    }
-
-    function handleDragLeave(e) {
-      e.currentTarget.classList.remove('drag-over');
-    }
-
-    function handleDrop(e, toPriority) {
-      e.preventDefault();
-      e.currentTarget.classList.remove('drag-over');
-
-      if (!draggedCard || !draggedFrom) return;
-
-      // Find and remove from source
-      const taskIndex = tasks[draggedFrom].findIndex(t => t.id === draggedCard);
-      if (taskIndex === -1) return;
-
-      const [task] = tasks[draggedFrom].splice(taskIndex, 1);
-
-      // Add to destination
-      tasks[toPriority].push(task);
-
-      saveTasks();
-      renderAll();
-
-      draggedCard = null;
-      draggedFrom = null;
-    }
-
-    // Render
-    function renderColumn(priority) {
-      const container = document.getElementById(`${priority}Cards`);
-      const list = tasks[priority];
-
-      if (list.length === 0) {
-        container.innerHTML = `
-          <div class="empty-state">
-            <span>📭</span>
-            <p>還沒有任務</p>
-          </div>
-        `;
-        return;
-      }
-
-      container.innerHTML = list.map(task => `
-        <div class="card" 
-             draggable="true" 
-             ondragstart="handleDragStart(event, '${task.id}', '${priority}')"
-             ondragend="this.classList.remove('dragging')">
-          <div class="card-header">
-            <span class="card-title">${escapeHtml(task.title)}</span>
-            <button class="card-delete" onclick="deleteTask('${task.id}')">×</button>
-          </div>
-          ${task.description ? `<div class="card-description">${escapeHtml(task.description)}</div>` : ''}
-          <div class="card-meta">
-            <span>📅 ${new Date(task.createdAt).toLocaleDateString('zh-TW')}</span>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    function renderAll() {
-      for (const p of ['p1', 'p2', 'p3']) {
-        renderColumn(p);
-      }
-      updateCounts();
-    }
-
-    function updateCounts() {
-      document.getElementById('p1Count').textContent = tasks.p1.length;
-      document.getElementById('p2Count').textContent = tasks.p2.length;
-      document.getElementById('p3Count').textContent = tasks.p3.length;
-    }
-
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
-
-    // AI Review
-    function reviewWithAI() {
-      const modal = document.getElementById('aiModal');
-      const body = document.getElementById('modalBody');
-      modal.classList.add('active');
-
-      // Simulate AI thinking
-      body.innerHTML = `
-        <div class="ai-thinking">
-          <div class="spinner"></div>
-          <p>AI 正在分析任務優先序...</p>
-        </div>
-      `;
-
-      // Build task summary for AI
-      const summary = buildTaskSummary();
-      
-      // Simulate AI response after delay
-      setTimeout(() => {
-        const review = generateAIReview(summary);
-        body.innerHTML = review;
-      }, 1500);
-    }
-
-    function buildTaskSummary() {
-      let text = '【任務總覽】\n\n';
-      
-      if (tasks.p1.length > 0) {
-        text += '🔥 P1 最重要：\n';
-        tasks.p1.forEach((t, i) => text += `  ${i+1}. ${t.title}${t.description ? `\n     說明：${t.description}` : ''}\n`);
-        text += '\n';
-      }
-      
-      if (tasks.p2.length > 0) {
-        text += '⭐ P2 重要：\n';
-        tasks.p2.forEach((t, i) => text += `  ${i+1}. ${t.title}${t.description ? `\n     說明：${t.description}` : ''}\n`);
-        text += '\n';
-      }
-      
-      if (tasks.p3.length > 0) {
-        text += '📌 P3 一般：\n';
-        tasks.p3.forEach((t, i) => text += `  ${i+1}. ${t.title}${t.description ? `\n     說明：${t.description}` : ''}\n`);
-        text += '\n';
-      }
-
-      text += `\n總計：P1(${tasks.p1.length}) / P2(${tasks.p2.length}) / P3(${tasks.p3.length})`;
-      return text;
-    }
-
-    function generateAIReview(summary) {
-      const p1Count = tasks.p1.length;
-      const p2Count = tasks.p2.length;
-      const p3Count = tasks.p3.length;
-      const total = p1Count + p2Count + p3Count;
-
-      let html = '';
-
-      // Overall assessment
-      html += '<div class="review-section">';
-      html += '<h3>📊 整體評估</h3>';
-      html += '<div class="review-item positive">';
-      html += `<span class="review-badge positive">✅ 良好</span>`;
-      html += `你共有 <strong>${total} 個任務</strong>，分配為 P1(${p1Count}) / P2(${p2Count}) / P3(${p3Count})。`;
-      html += '</div></div>';
-
-      // P1 Analysis
-      if (p1Count > 0) {
-        html += '<div class="review-section">';
-        html += '<h3>🔥 P1 任務分析</h3>';
-        if (p1Count <= 3) {
-          html += `<div class="review-item positive"><span class="review-badge positive">✅ 合理</span>P1 設定 3 項以內，符合「最重要」的定義。</div>`;
-        } else {
-          html += `<div class="review-item warning"><span class="review-badge warning">⚠️ 建議</span>P1 有 ${p1Count} 項偏多，建議重新檢視是否每項都真的是「最重要」？</div>`;
-        }
-        html += '</div>';
-      }
-
-      // Suggestions
-      html += '<div class="review-section">';
-      html += '<h3>💡 優化建議</h3>';
-
-      if (p1Count === 0 && total > 0) {
-        html += '<div class="review-item suggestion"><span class="review-badge suggestion">💡 建議</span>你沒有設定 P1 任務。挑選最重要的 1-3 項列為 P1，確保核心目標優先完成。</div>';
-      }
-
-      if (p3Count > p1Count * 2) {
-        html += '<div class="review-item suggestion"><span class="review-badge suggestion">💡 建議</span>P3 任務偏多，建議評估這些是否真的需要現在處理，或可刪除/推遲。</div>';
-      }
-
-      if (total <= 3) {
-        html += '<div class="review-item positive"><span class="review-badge positive">✅ 精實</span>任務數量精簡，專注在核心目標，執行效率最高。</div>';
-      }
-
-      html += '</div>';
-
-      // Tasks Summary
-      html += '<div class="review-section">';
-      html += `<h3>📋 任務摘要</h3>`;
-      html += `<pre style="background: var(--bg); padding: 12px; border-radius: 8px; font-size: 0.85rem; overflow-x: auto;">${escapeHtml(summary)}</pre>`;
-      html += '</div>';
-
-      // Actions
-      html += '<div style="margin-top: 20px; display: flex; gap: 10px;">';
-      html += `<button class="btn btn-primary" onclick="generatePrompt()">📝 生成 Prompt</button>`;
-      html += `<button class="btn btn-secondary" onclick="closeModal()">✏️ 繼續調整</button>`;
-      html += '</div>';
-
-      return html;
-    }
-
-    function closeModal() {
-      document.getElementById('aiModal').classList.remove('active');
-    }
-
-    // Generate Prompt
-    function generatePrompt() {
-      closeModal();
-
-      const output = document.getElementById('outputSection');
-      const prompt = document.getElementById('finalPrompt');
-      output.classList.add('active');
-
-      const text = buildPromptText();
-      prompt.textContent = text;
-
-      // Scroll to output
-      output.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-
-    function regeneratePrompt() {
-      const prompt = document.getElementById('finalPrompt');
-      prompt.textContent = buildPromptText();
-    }
-
-    function buildPromptText() {
-      const now = new Date().toLocaleString('zh-TW');
-
-      let text = `【任務優先序確認單】
-Generated: ${now}
-================================
-
-我已完成 CaloScanAi 專案的任務優先序排列，請根據以下安排繼續開發：
-
-`;
-
-      if (tasks.p1.length > 0) {
-        text += `## 🔥 P1 - 最重要（必須優先完成）
-
-`;
-        tasks.p1.forEach((t, i) => {
-          text += `${i+1}. ${t.title}`;
-          if (t.description) text += `\n   說明：${t.description}`;
-          text += '\n';
-        });
-        text += '\n';
-      }
-
-      if (tasks.p2.length > 0) {
-        text += `## ⭐ P2 - 重要（確認 P1 完成後著手）
-
-`;
-        tasks.p2.forEach((t, i) => {
-          text += `${i+1}. ${t.title}`;
-          if (t.description) text += `\n   說明：${t.description}`;
-          text += '\n';
-        });
-        text += '\n';
-      }
-
-      if (tasks.p3.length > 0) {
-        text += `## 📌 P3 - 一般（有空再做或之後處理）
-
-`;
-        tasks.p3.forEach((t, i) => {
-          text += `${i+1}. ${t.title}`;
-          if (t.description) text += `\n   說明：${t.description}`;
-          text += '\n';
-        });
-        text += '\n';
-      }
-
-      text += `================================
-總計：${tasks.p1.length + tasks.p2.length + tasks.p3.length} 個任務
-P1: ${tasks.p1.length} 項 | P2: ${tasks.p2.length} 項 | P3: ${tasks.p3.length} 項
-================================
-
-請根據以上優先序開始執行任務。如有疑問請提出。`;
-
-      return text;
-    }
-
-    function copyPrompt() {
-      const text = document.getElementById('finalPrompt').textContent;
-      navigator.clipboard.writeText(text).then(() => {
-        const btn = document.querySelector('.copy-btn');
-        const original = btn.textContent;
-        btn.textContent = '✅ 已複製！';
-        setTimeout(() => btn.textContent = original, 2000);
-      });
-    }
-
-    // Init
-    loadTasks();
-
-    // If empty, show empty states
-    if (tasks.p1.length + tasks.p2.length + tasks.p3.length === 0) {
-      renderAll();
-    }
-  </script>
+  } else {
+    cards.push({
+      id: Date.now().toString(),
+      title, desc, tag,
+      priority
+    });
+  }
+  saveState();
+  renderAll();
+  closeModal();
+}
+
+function resetAll() {
+  if (!confirm('確定要清空所有工作？')) return;
+  cards = [];
+  saveState();
+  renderAll();
+  document.getElementById('output-panel').classList.remove('active');
+}
+
+// ── Generate Prompt ───────────────────────────────────────────────────────────
+function generatePrompt() {
+  if (cards.length === 0) {
+    alert('還沒有任何工作，請先新增或新增範例資料');
+    return;
+  }
+
+  const p1 = cards.filter(c => c.priority === 1).sort((a,b) => a.title.localeCompare(b.title, 'zh'));
+  const p2 = cards.filter(c => c.priority === 2).sort((a,b) => a.title.localeCompare(b.title, 'zh'));
+  const p3 = cards.filter(c => c.priority === 3).sort((a,b) => a.title.localeCompare(b.title, 'zh'));
+
+  let lines = [];
+  lines.push('以下是經過我優先序決策後的工作清單，請據此安排執行順序：\n');
+
+  if (p1.length) {
+    lines.push('🔴 第一優先（最高優先，盡快處理）：');
+    p1.forEach((c, i) => {
+      lines.push(`  ${i+1}. ${c.title}${c.tag ? ` [${c.tag}]` : ''}${c.desc ? `\n     → ${c.desc}` : ''}`);
+    });
+    lines.push('');
+  }
+  if (p2.length) {
+    lines.push('🟡 第二優先（重要但非緊急）：');
+    p2.forEach((c, i) => {
+      lines.push(`  ${i+1}. ${c.title}${c.tag ? ` [${c.tag}]` : ''}${c.desc ? `\n     → ${c.desc}` : ''}`);
+    });
+    lines.push('');
+  }
+  if (p3.length) {
+    lines.push('🟢 第三優先（可稍後處理）：');
+    p3.forEach((c, i) => {
+      lines.push(`  ${i+1}. ${c.title}${c.tag ? ` [${c.tag}]` : ''}${c.desc ? `\n     → ${c.desc}` : ''}`);
+    });
+    lines.push('');
+  }
+
+  lines.push('請根據以上優先順序執行，並在完成後向我報告進度。');
+  const prompt = lines.join('\n');
+
+  document.getElementById('prompt-output').textContent = prompt;
+  document.getElementById('output-panel').classList.add('active');
+  document.getElementById('copy-msg').style.display = 'none';
+}
+
+function copyPrompt() {
+  const text = document.getElementById('prompt-output').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const msg = document.getElementById('copy-msg');
+    msg.style.display = 'inline';
+    setTimeout(() => msg.style.display = 'none', 2000);
+  });
+}
+
+// Close modal on outside click
+document.getElementById('modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeModal();
+});
+
+// Init
+loadState();
+</script>
 </body>
 </html>
