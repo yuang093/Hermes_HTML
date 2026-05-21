@@ -446,10 +446,20 @@ function loadState() {
   } else {
     // Sample starter cards
     cards = [
-      { id: 'sample1', title: '分析資料庫備份策略', desc: '評估 Vercel Postgres vs Supabase vs Mac Mini 自托管', tag: '研究', priority: 2 },
-      { id: 'sample2', title: '設計 CaloScanAi 登入流程', desc: '含註冊、JWT、密碼重置', tag: '技術', priority: 1 },
-      { id: 'sample3', title: '建立資料庫 Schema', desc: 'Users、FoodLogs、BarcodeDictionary、DailyQuotes', tag: '技術', priority: 1 },
-      { id: 'sample4', title: '寫 README.md', desc: '專案說明文件，含安裝與使用方式', tag: '文件', priority: 3 },
+      { id: 't1', title: '建立 Vercel HTML 專案（優先序決策器）', desc: '將所有 CaloScanAi 任務上传到 Vercel 優先序決策器', tag: '技術', priority: 1 },
+      { id: 't2', title: '產出 6 種 UI/UX 原型提案', desc: '6種不同風格的登入/註冊/首頁設計，供選擇', tag: '設計', priority: 1 },
+      { id: 't3', title: 'AI 生成使用者調查問卷', desc: '萃取核心功能需求', tag: '研究', priority: 1 },
+      { id: 't4', title: '分析資料庫備份策略', desc: '.sql + .tar.gz 方案文件說明', tag: '研究', priority: 2 },
+      { id: 't5', title: '實作影像壓縮模組', desc: '300KB、max 1200px、quality 0.85~0.4', tag: '技術', priority: 2 },
+      { id: 't6', title: '串接 MiniMax AI 分析食物照片', desc: '熱量辨識核心功能', tag: '技術', priority: 2 },
+      { id: 't7', title: '實作條碼掃描與字典檔搜尋', desc: 'BarcodeDictionary 查詢功能', tag: '技術', priority: 2 },
+      { id: 't8', title: '寫 README.md', desc: '專案說明，含安裝與使用方式', tag: '文件', priority: 3 },
+      { id: 't9', title: '實作後台儀表板', desc: '統計數據面板', tag: '技術', priority: 3 },
+      { id: 't10', title: '實作帳號管理', desc: '改密碼、刪除、升級管理員', tag: '技術', priority: 3 },
+      { id: 't11', title: '實作資料庫備份/還原機制', desc: '手動+自動備份、下載、還原', tag: '技術', priority: 3 },
+      { id: 't12', title: '實作深色/亮色模式切換', desc: 'UI 深色/亮色主題切換', tag: '技術', priority: 3 },
+      { id: 't13', title: '匯入 365 鼓勵語錄 + 首頁輪播', desc: '每日語錄輪播功能', tag: '技術', priority: 3 },
+      { id: 't14', title: '實作斗內（Donation）按鈕', desc: '斗內功能按鈕', tag: '商業', priority: 3 },
     ];
   }
   renderAll();
