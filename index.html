@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hermes 任務優先序排程器</title>
+  <style>
+    :root {
+      --bg: #f8f9fa;
+      --card-bg: #ffffff;
+      --text: #212529;
+      --text-secondary: #6c757d;
+      --border: #dee2e6;
+      --p1-color: #dc3545;
+      --p1-bg: #fff5f5;
+      --p2-color: #fd7e14;
+      --p2-bg: #fff8f0;
+      --p3-color: #20c997;
+      --p3-bg: #f0fffd;
+      --accent: #6c5ce7;
+      --accent-hover: #5a4bd1;
+      --shadow: 0 2px 8px rgba(0,0,0,0.08);
+      --shadow-hover: 0 4px 16px rgba(0,0,0,0.12);
+    }
+
+    [data-theme="dark"] {
+      --bg: #1a1a2e;
+      --card-bg: #16213e;
+      --text: #eaeaea;
+      --text-secondary: #a0a0a0;
+      --border: #2d3a5a;
+      --p1-bg: #2d1f2f;
+      --p2-bg: #2d2a1f;
+      --p3-bg: #1f2d2a;
+      --shadow: 0 2px 8px rgba(0,0,0,0.3);
+      --shadow-hover: 0 4px 16px rgba(0,0,0,0.4);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    header {
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: var(--shadow);
+    }
+
+    header h1 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    header h1 span { font-size: 1.5rem; }
+
+    .theme-toggle {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: all 0.2s;
+    }
+    .theme-toggle:hover { background: var(--border); }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .controls input {
+      flex: 1;
+      min-width: 200px;
+      padding: 12px 16px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      font-size: 1rem;
+      background: var(--card-bg);
+      color: var(--text);
+      transition: border-color 0.2s;
+    }
+    .controls input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .btn {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+    .btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
+
+    .btn-secondary {
+      background: var(--card-bg);
+      color: var(--text);
+      border: 2px solid var(--border);
+    }
+    .btn-secondary:hover { border-color: var(--accent); }
+
+    .btn-ai {
+      background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+      color: white;
+    }
+    .btn-ai:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(108,92,231,0.4); }
+
+    .columns {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    @media (max-width: 900px) {
+      .columns { grid-template-columns: 1fr; }
+    }
+
+    .column {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 16px;
+      min-height: 400px;
+      box-shadow: var(--shadow);
+    }
+
+    .column-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .column-p1 .column-header { border-color: var(--p1-color); }
+    .column-p2 .column-header { border-color: var(--p2-color); }
+    .column-p3 .column-header { border-color: var(--p3-color); }
+
+    .column-badge {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: white;
+    }
+    .column-p1 .column-badge { background: var(--p1-color); }
+    .column-p2 .column-badge { background: var(--p2-color); }
+    .column-p3 .column-badge { background: var(--p3-color); }
+
+    .column-title {
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .column-count {
+      margin-left: auto;
+      background: var(--bg);
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .cards {
+      min-height: 300px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .card {
+      background: var(--bg);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      cursor: grab;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .card:hover {
+      border-color: var(--accent);
+      box-shadow: var(--shadow-hover);
+      transform: translateY(-2px);
+    }
+    .card.dragging {
+      opacity: 0.5;
+      cursor: grabbing;
+    }
+    .card.drag-over { border-color: var(--accent); background: rgba(108,92,231,0.05); }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+
+    .card-title {
+      font-weight: 600;
+      font-size: 0.95rem;
+      line-height: 1.4;
+      flex: 1;
+    }
+
+    .card-delete {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+    .card-delete:hover { background: #dc3545; color: white; }
+
+    .card-meta {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      display: flex;
+      gap: 12px;
+    }
+
+    .card-description {
+      margin-top: 8px;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-secondary);
+    }
+    .empty-state span { font-size: 3rem; display: block; margin-bottom: 10px; }
+
+    /* AI Review Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .modal-overlay.active { display: flex; }
+
+    .modal {
+      background: var(--card-bg);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 600px;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    .modal-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      background: var(--card-bg);
+    }
+    .modal-header h2 { font-size: 1.1rem; }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: var(--text-secondary);
+    }
+    .modal-close:hover { color: var(--text); }
+
+    .modal-body { padding: 24px; }
+
+    .review-section {
+      margin-bottom: 20px;
+    }
+    .review-section h3 {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .review-item {
+      background: var(--bg);
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 10px;
+    }
+    .review-item.positive { border-left: 4px solid #28a745; }
+    .review-item.warning { border-left: 4px solid #fd7e14; }
+    .review-item.suggestion { border-left: 4px solid var(--accent); }
+
+    .review-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-right: 8px;
+    }
+    .review-badge.positive { background: #d4edda; color: #155724; }
+    .review-badge.warning { background: #fff3cd; color: #856404; }
+    .review-badge.suggestion { background: #e8daef; color: #5a3d7a; }
+
+    .ai-thinking {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-secondary);
+    }
+    .ai-thinking .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Prompt Output */
+    .prompt-output {
+      background: #1e1e2e;
+      color: #cdd6f4;
+      border-radius: 10px;
+      padding: 16px;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 200px;
+      overflow-y: auto;
+      margin-top: 12px;
+    }
+
+    .copy-btn {
+      background: #313244;
+      color: #cdd6f4;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      margin-top: 10px;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover { background: #45475a; }
+
+    /* Output Section */
+    .output-section {
+      margin-top: 24px;
+      display: none;
+    }
+    .output-section.active { display: block; }
+
+    .output-box {
+      background: var(--card-bg);
+      border: 2px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+    }
+    .output-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .output-header h3 {
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .final-prompt {
+      background: #1e1e2e;
+      color: #cdd6f4;
+      border-radius: 10px;
+      padding: 16px;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1><span>📋</span> Hermes 任務優先序排程器</h1>
+    <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+  </header>
+
+  <div class="container">
+    <div class="controls">
+      <input type="text" id="taskInput" placeholder="輸入新任務...（按 Enter 新增）" onkeypress="handleKeypress(event)">
+      <select id="prioritySelect" style="padding: 12px; border: 2px solid var(--border); border-radius: 10px; background: var(--card-bg); color: var(--text); font-size: 1rem;">
+        <option value="p1">🔥 P1 - 最重要</option>
+        <option value="p2">⭐ P2 - 重要</option>
+        <option value="p3">📌 P3 - 一般</option>
+      </select>
+      <button class="btn btn-primary" onclick="addTask()">➕ 新增任務</button>
+      <button class="btn btn-secondary" onclick="loadSampleTasks()">📝 載入範例</button>
+    </div>
+
+    <div class="columns">
+      <div class="column column-p1" ondragover="handleDragOver(event)" ondrop="handleDrop(event, 'p1')" ondragleave="handleDragLeave(event)">
+        <div class="column-header">
+          <span class="column-badge">P1</span>
+          <span class="column-title">🔥 最重要</span>
+          <span class="column-count" id="p1Count">0</span>
+        </div>
+        <div class="cards" id="p1Cards"></div>
+      </div>
+
+      <div class="column column-p2" ondragover="handleDragOver(event)" ondrop="handleDrop(event, 'p2')" ondragleave="handleDragLeave(event)">
+        <div class="column-header">
+          <span class="column-badge">P2</span>
+          <span class="column-title">⭐ 重要</span>
+          <span class="column-count" id="p2Count">0</span>
+        </div>
+        <div class="cards" id="p2Cards"></div>
+      </div>
+
+      <div class="column column-p3" ondragover="handleDragOver(event)" ondrop="handleDrop(event, 'p3')" ondragleave="handleDragLeave(event)">
+        <div class="column-header">
+          <span class="column-badge">P3</span>
+          <span class="column-title">📌 一般</span>
+          <span class="column-count" id="p3Count">0</span>
+        </div>
+        <div class="cards" id="p3Cards"></div>
+      </div>
+    </div>
+
+    <div class="output-section" id="outputSection">
+      <div class="output-box">
+        <div class="output-header">
+          <h3>✅ 最終優先序 Prompt</h3>
+          <button class="btn btn-primary" onclick="regeneratePrompt()">🔄 重新生成</button>
+        </div>
+        <div class="final-prompt" id="finalPrompt"></div>
+        <button class="copy-btn" onclick="copyPrompt()">📋 複製 Prompt</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Review Modal -->
+  <div class="modal-overlay" id="aiModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>🤖 AI 審核建議</h2>
+        <button class="modal-close" onclick="closeModal()">×</button>
+      </div>
+      <div class="modal-body" id="modalBody">
+        <div class="ai-thinking">
+          <div class="spinner"></div>
+          <p>AI 正在分析任務優先序...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // State
+    let tasks = {
+      p1: [],
+      p2: [],
+      p3: []
+    };
+    let draggedCard = null;
+    let draggedFrom = null;
+
+    // Theme
+    function toggleTheme() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      document.querySelector('.theme-toggle').textContent = next === 'dark' ? '☀️' : '🌙';
+      localStorage.setItem('theme', next);
+    }
+
+    // Init theme
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    document.querySelector('.theme-toggle').textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+
+    // Load from localStorage
+    function loadTasks() {
+      const saved = localStorage.getItem('hermes-tasks');
+      if (saved) {
+        tasks = JSON.parse(saved);
+        renderAll();
+      }
+    }
+
+    function saveTasks() {
+      localStorage.setItem('hermes-tasks', JSON.stringify(tasks));
+    }
+
+    // Task operations
+    function generateId() {
+      return Date.now().toString(36) + Math.random().toString(36).substr(2);
+    }
+
+    function addTask() {
+      const input = document.getElementById('taskInput');
+      const priority = document.getElementById('prioritySelect').value;
+      const text = input.value.trim();
+      
+      if (!text) return alert('請輸入任務內容');
+
+      const task = {
+        id: generateId(),
+        title: text,
+        description: '',
+        createdAt: new Date().toISOString()
+      };
+
+      tasks[priority].push(task);
+      input.value = '';
+      saveTasks();
+      renderColumn(priority);
+      updateCounts();
+    }
+
+    function handleKeypress(e) {
+      if (e.key === 'Enter') addTask();
+    }
+
+    function deleteTask(id) {
+      for (const p of ['p1', 'p2', 'p3']) {
+        tasks[p] = tasks[p].filter(t => t.id !== id);
+      }
+      saveTasks();
+      renderAll();
+    }
+
+    function loadSampleTasks() {
+      if (tasks.p1.length + tasks.p2.length + tasks.p3.length > 0) {
+        if (!confirm('確定要載入範例任務嗎？現有任務會被取代。')) return;
+      }
+
+      tasks = {
+        p1: [
+          { id: generateId(), title: '建立 GitHub Repository 並初始化', description: '建立 CaloScanAi_Hermes 和 Hermes_HTML 兩個 Repo', createdAt: new Date().toISOString() },
+          { id: generateId(), title: '設計資料庫 Schema', description: 'Users, FoodLogs, BarcodeDictionary, DailyQuotes', createdAt: new Date().toISOString() },
+          { id: generateId(), title: '撰寫 Docker Compose 設定檔', description: 'Next.js + PostgreSQL + Volume 設定', createdAt: new Date().toISOString() }
+        ],
+        p2: [
+          { id: generateId(), title: '實作會員登入/註冊功能', description: 'JWT 或 Session 機制', createdAt: new Date().toISOString() },
+          { id: generateId(), title: '串接 AI Vision API', description: '食物照片熱量辨識', createdAt: new Date().toISOString() },
+          { id: generateId(), title: '建立備份腳本', description: '每日自動備份 SQL 格式', createdAt: new Date().toISOString() }
+        ],
+        p3: [
+          { id: generateId(), title: '深色/亮色模式切換', description: 'UI 優化', createdAt: new Date().toISOString() },
+          { id: generateId(), title: '365 句鼓勵語錄', description: '資料庫預載', createdAt: new Date().toISOString() },
+          { id: generateId(), title: '斗內 (Donation) 按鈕', description: '金流串接', createdAt: new Date().toISOString() }
+        ]
+      };
+      saveTasks();
+      renderAll();
+    }
+
+    // Drag and Drop
+    function handleDragStart(e, taskId, fromPriority) {
+      draggedCard = taskId;
+      draggedFrom = fromPriority;
+      e.target.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    }
+
+    function handleDragOver(e) {
+      e.preventDefault();
+      e.currentTarget.classList.add('drag-over');
+    }
+
+    function handleDragLeave(e) {
+      e.currentTarget.classList.remove('drag-over');
+    }
+
+    function handleDrop(e, toPriority) {
+      e.preventDefault();
+      e.currentTarget.classList.remove('drag-over');
+
+      if (!draggedCard || !draggedFrom) return;
+
+      // Find and remove from source
+      const taskIndex = tasks[draggedFrom].findIndex(t => t.id === draggedCard);
+      if (taskIndex === -1) return;
+
+      const [task] = tasks[draggedFrom].splice(taskIndex, 1);
+
+      // Add to destination
+      tasks[toPriority].push(task);
+
+      saveTasks();
+      renderAll();
+
+      draggedCard = null;
+      draggedFrom = null;
+    }
+
+    // Render
+    function renderColumn(priority) {
+      const container = document.getElementById(`${priority}Cards`);
+      const list = tasks[priority];
+
+      if (list.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <span>📭</span>
+            <p>還沒有任務</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = list.map(task => `
+        <div class="card" 
+             draggable="true" 
+             ondragstart="handleDragStart(event, '${task.id}', '${priority}')"
+             ondragend="this.classList.remove('dragging')">
+          <div class="card-header">
+            <span class="card-title">${escapeHtml(task.title)}</span>
+            <button class="card-delete" onclick="deleteTask('${task.id}')">×</button>
+          </div>
+          ${task.description ? `<div class="card-description">${escapeHtml(task.description)}</div>` : ''}
+          <div class="card-meta">
+            <span>📅 ${new Date(task.createdAt).toLocaleDateString('zh-TW')}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderAll() {
+      for (const p of ['p1', 'p2', 'p3']) {
+        renderColumn(p);
+      }
+      updateCounts();
+    }
+
+    function updateCounts() {
+      document.getElementById('p1Count').textContent = tasks.p1.length;
+      document.getElementById('p2Count').textContent = tasks.p2.length;
+      document.getElementById('p3Count').textContent = tasks.p3.length;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // AI Review
+    function reviewWithAI() {
+      const modal = document.getElementById('aiModal');
+      const body = document.getElementById('modalBody');
+      modal.classList.add('active');
+
+      // Simulate AI thinking
+      body.innerHTML = `
+        <div class="ai-thinking">
+          <div class="spinner"></div>
+          <p>AI 正在分析任務優先序...</p>
+        </div>
+      `;
+
+      // Build task summary for AI
+      const summary = buildTaskSummary();
+      
+      // Simulate AI response after delay
+      setTimeout(() => {
+        const review = generateAIReview(summary);
+        body.innerHTML = review;
+      }, 1500);
+    }
+
+    function buildTaskSummary() {
+      let text = '【任務總覽】\n\n';
+      
+      if (tasks.p1.length > 0) {
+        text += '🔥 P1 最重要：\n';
+        tasks.p1.forEach((t, i) => text += `  ${i+1}. ${t.title}${t.description ? `\n     說明：${t.description}` : ''}\n`);
+        text += '\n';
+      }
+      
+      if (tasks.p2.length > 0) {
+        text += '⭐ P2 重要：\n';
+        tasks.p2.forEach((t, i) => text += `  ${i+1}. ${t.title}${t.description ? `\n     說明：${t.description}` : ''}\n`);
+        text += '\n';
+      }
+      
+      if (tasks.p3.length > 0) {
+        text += '📌 P3 一般：\n';
+        tasks.p3.forEach((t, i) => text += `  ${i+1}. ${t.title}${t.description ? `\n     說明：${t.description}` : ''}\n`);
+        text += '\n';
+      }
+
+      text += `\n總計：P1(${tasks.p1.length}) / P2(${tasks.p2.length}) / P3(${tasks.p3.length})`;
+      return text;
+    }
+
+    function generateAIReview(summary) {
+      const p1Count = tasks.p1.length;
+      const p2Count = tasks.p2.length;
+      const p3Count = tasks.p3.length;
+      const total = p1Count + p2Count + p3Count;
+
+      let html = '';
+
+      // Overall assessment
+      html += '<div class="review-section">';
+      html += '<h3>📊 整體評估</h3>';
+      html += '<div class="review-item positive">';
+      html += `<span class="review-badge positive">✅ 良好</span>`;
+      html += `你共有 <strong>${total} 個任務</strong>，分配為 P1(${p1Count}) / P2(${p2Count}) / P3(${p3Count})。`;
+      html += '</div></div>';
+
+      // P1 Analysis
+      if (p1Count > 0) {
+        html += '<div class="review-section">';
+        html += '<h3>🔥 P1 任務分析</h3>';
+        if (p1Count <= 3) {
+          html += `<div class="review-item positive"><span class="review-badge positive">✅ 合理</span>P1 設定 3 項以內，符合「最重要」的定義。</div>`;
+        } else {
+          html += `<div class="review-item warning"><span class="review-badge warning">⚠️ 建議</span>P1 有 ${p1Count} 項偏多，建議重新檢視是否每項都真的是「最重要」？</div>`;
+        }
+        html += '</div>';
+      }
+
+      // Suggestions
+      html += '<div class="review-section">';
+      html += '<h3>💡 優化建議</h3>';
+
+      if (p1Count === 0 && total > 0) {
+        html += '<div class="review-item suggestion"><span class="review-badge suggestion">💡 建議</span>你沒有設定 P1 任務。挑選最重要的 1-3 項列為 P1，確保核心目標優先完成。</div>';
+      }
+
+      if (p3Count > p1Count * 2) {
+        html += '<div class="review-item suggestion"><span class="review-badge suggestion">💡 建議</span>P3 任務偏多，建議評估這些是否真的需要現在處理，或可刪除/推遲。</div>';
+      }
+
+      if (total <= 3) {
+        html += '<div class="review-item positive"><span class="review-badge positive">✅ 精實</span>任務數量精簡，專注在核心目標，執行效率最高。</div>';
+      }
+
+      html += '</div>';
+
+      // Tasks Summary
+      html += '<div class="review-section">';
+      html += `<h3>📋 任務摘要</h3>`;
+      html += `<pre style="background: var(--bg); padding: 12px; border-radius: 8px; font-size: 0.85rem; overflow-x: auto;">${escapeHtml(summary)}</pre>`;
+      html += '</div>';
+
+      // Actions
+      html += '<div style="margin-top: 20px; display: flex; gap: 10px;">';
+      html += `<button class="btn btn-primary" onclick="generatePrompt()">📝 生成 Prompt</button>`;
+      html += `<button class="btn btn-secondary" onclick="closeModal()">✏️ 繼續調整</button>`;
+      html += '</div>';
+
+      return html;
+    }
+
+    function closeModal() {
+      document.getElementById('aiModal').classList.remove('active');
+    }
+
+    // Generate Prompt
+    function generatePrompt() {
+      closeModal();
+
+      const output = document.getElementById('outputSection');
+      const prompt = document.getElementById('finalPrompt');
+      output.classList.add('active');
+
+      const text = buildPromptText();
+      prompt.textContent = text;
+
+      // Scroll to output
+      output.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function regeneratePrompt() {
+      const prompt = document.getElementById('finalPrompt');
+      prompt.textContent = buildPromptText();
+    }
+
+    function buildPromptText() {
+      const now = new Date().toLocaleString('zh-TW');
+
+      let text = `【任務優先序確認單】
+Generated: ${now}
+================================
+
+我已完成 CaloScanAi 專案的任務優先序排列，請根據以下安排繼續開發：
+
+`;
+
+      if (tasks.p1.length > 0) {
+        text += `## 🔥 P1 - 最重要（必須優先完成）
+
+`;
+        tasks.p1.forEach((t, i) => {
+          text += `${i+1}. ${t.title}`;
+          if (t.description) text += `\n   說明：${t.description}`;
+          text += '\n';
+        });
+        text += '\n';
+      }
+
+      if (tasks.p2.length > 0) {
+        text += `## ⭐ P2 - 重要（確認 P1 完成後著手）
+
+`;
+        tasks.p2.forEach((t, i) => {
+          text += `${i+1}. ${t.title}`;
+          if (t.description) text += `\n   說明：${t.description}`;
+          text += '\n';
+        });
+        text += '\n';
+      }
+
+      if (tasks.p3.length > 0) {
+        text += `## 📌 P3 - 一般（有空再做或之後處理）
+
+`;
+        tasks.p3.forEach((t, i) => {
+          text += `${i+1}. ${t.title}`;
+          if (t.description) text += `\n   說明：${t.description}`;
+          text += '\n';
+        });
+        text += '\n';
+      }
+
+      text += `================================
+總計：${tasks.p1.length + tasks.p2.length + tasks.p3.length} 個任務
+P1: ${tasks.p1.length} 項 | P2: ${tasks.p2.length} 項 | P3: ${tasks.p3.length} 項
+================================
+
+請根據以上優先序開始執行任務。如有疑問請提出。`;
+
+      return text;
+    }
+
+    function copyPrompt() {
+      const text = document.getElementById('finalPrompt').textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.querySelector('.copy-btn');
+        const original = btn.textContent;
+        btn.textContent = '✅ 已複製！';
+        setTimeout(() => btn.textContent = original, 2000);
+      });
+    }
+
+    // Init
+    loadTasks();
+
+    // If empty, show empty states
+    if (tasks.p1.length + tasks.p2.length + tasks.p3.length === 0) {
+      renderAll();
+    }
+  </script>
+</body>
+</html>
