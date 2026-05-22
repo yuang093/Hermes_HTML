@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CaloScanAi - 熱量追蹤</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #ffffff;
+      min-height: 100vh;
+      padding: 16px;
+      padding-bottom: 100px;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      padding: 12px;
+      border: 3px solid #000000;
+      background: #ffffff;
+      box-shadow: 5px 5px 0 #000000;
+    }
+
+    .greeting {
+      font-size: 18px;
+      font-weight: 800;
+      color: #000000;
+    }
+
+    .avatar {
+      width: 48px;
+      height: 48px;
+      border: 3px solid #000000;
+      background: #ff6b6b;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: 3px 3px 0 #000000;
+    }
+
+    /* Calorie Main Card */
+    .calorie-card {
+      background: #FFE066;
+      border: 4px solid #000000;
+      box-shadow: 8px 8px 0 #000000;
+      padding: 24px;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .calorie-label {
+      font-size: 14px;
+      font-weight: 700;
+      color: #000000;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .calorie-main {
+      font-size: 56px;
+      font-weight: 900;
+      color: #000000;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .calorie-unit {
+      font-size: 24px;
+      font-weight: 800;
+      color: #000000;
+    }
+
+    .calorie-target {
+      font-size: 14px;
+      font-weight: 700;
+      color: #000000;
+      margin-top: 8px;
+      opacity: 0.7;
+    }
+
+    /* Macro Cards */
+    .macro-container {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .macro-card {
+      padding: 16px;
+      text-align: center;
+      border: 3px solid #000000;
+      box-shadow: 5px 5px 0 #000000;
+    }
+
+    .macro-card.protein {
+      background: #74C0FC;
+    }
+
+    .macro-card.carbs {
+      background: #FFA94D;
+    }
+
+    .macro-card.fat {
+      background: #FFE066;
+    }
+
+    .macro-icon {
+      font-size: 24px;
+      margin-bottom: 4px;
+    }
+
+    .macro-value {
+      font-size: 28px;
+      font-weight: 900;
+      color: #000000;
+      line-height: 1;
+    }
+
+    .macro-unit {
+      font-size: 14px;
+      font-weight: 700;
+      color: #000000;
+    }
+
+    .macro-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #000000;
+      margin-top: 4px;
+      text-transform: uppercase;
+    }
+
+    /* Food Log */
+    .food-log {
+      border: 3px solid #000000;
+      box-shadow: 5px 5px 0 #000000;
+      background: #ffffff;
+      margin-bottom: 24px;
+    }
+
+    .food-log-header {
+      background: #000000;
+      color: #ffffff;
+      padding: 12px 16px;
+      font-size: 14px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .food-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 2px solid #000000;
+    }
+
+    .food-item:last-child {
+      border-bottom: none;
+    }
+
+    .food-time {
+      font-size: 12px;
+      font-weight: 700;
+      color: #666666;
+      min-width: 50px;
+    }
+
+    .food-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: #000000;
+      flex: 1;
+      padding: 0 12px;
+    }
+
+    .food-calories {
+      font-size: 16px;
+      font-weight: 800;
+      color: #000000;
+    }
+
+    /* Camera Button */
+    .camera-section {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 16px;
+      background: #ffffff;
+      border-top: 3px solid #000000;
+    }
+
+    .camera-btn {
+      width: 100%;
+      padding: 20px;
+      background: #FF6B6B;
+      border: 4px solid #000000;
+      box-shadow: 6px 6px 0 #000000;
+      font-family: 'Inter', sans-serif;
+      font-size: 18px;
+      font-weight: 800;
+      color: #000000;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+
+    .camera-btn:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 8px 8px 0 #000000;
+    }
+
+    .camera-btn:active {
+      transform: translate(2px, 2px);
+      box-shadow: 4px 4px 0 #000000;
+    }
+
+    .camera-icon {
+      font-size: 24px;
+    }
+
+    /* Progress Bar */
+    .progress-container {
+      margin-top: 12px;
+      background: #ffffff;
+      border: 2px solid #000000;
+      height: 16px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: #69DB7C;
+      transition: width 0.3s ease;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header with Greeting & Avatar -->
+  <div class="header">
+    <div class="greeting">嗨，小美！👋<br>今天也要好好吃飯</div>
+    <div class="avatar">🍱</div>
+  </div>
+
+  <!-- Main Calorie Display -->
+  <div class="calorie-card">
+    <div class="calorie-label">今日剩餘熱量</div>
+    <div class="calorie-main">1380</div>
+    <div class="calorie-unit">kcal</div>
+    <div class="progress-container">
+      <div class="progress-bar" style="width: 37%"></div>
+    </div>
+    <div class="calorie-target">目標 2200 kcal · 已攝取 820 kcal</div>
+  </div>
+
+  <!-- Macro Cards -->
+  <div class="macro-container">
+    <div class="macro-card protein">
+      <div class="macro-icon">💪</div>
+      <div class="macro-value">68</div>
+      <div class="macro-unit">g</div>
+      <div class="macro-label">蛋白質</div>
+    </div>
+    <div class="macro-card carbs">
+      <div class="macro-icon">🍞</div>
+      <div class="macro-value">142</div>
+      <div class="macro-unit">g</div>
+      <div class="macro-label">碳水</div>
+    </div>
+    <div class="macro-card fat">
+      <div class="macro-icon">🥑</div>
+      <div class="macro-value">38</div>
+      <div class="macro-unit">g</div>
+      <div class="macro-label">脂肪</div>
+    </div>
+  </div>
+
+  <!-- Food Log -->
+  <div class="food-log">
+    <div class="food-log-header">📋 今日飲食記錄</div>
+    <div class="food-item">
+      <div class="food-time">07:30</div>
+      <div class="food-name">原味優格 + 燕麥片</div>
+      <div class="food-calories">320 kcal</div>
+    </div>
+    <div class="food-item">
+      <div class="food-time">12:15</div>
+      <div class="food-name">烤雞胸肉沙拉</div>
+      <div class="food-calories">420 kcal</div>
+    </div>
+    <div class="food-item">
+      <div class="food-time">15:45</div>
+      <div class="food-name">拿鐵咖啡 ☕</div>
+      <div class="food-calories">80 kcal</div>
+    </div>
+  </div>
+
+  <!-- Camera Button -->
+  <div class="camera-section">
+    <button class="camera-btn">
+      <span class="camera-icon">📷</span>
+      拍照辨識食物
+    </button>
+  </div>
+
+</body>
+</html>

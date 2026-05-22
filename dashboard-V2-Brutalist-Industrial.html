@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CaloScanAi - 儀表板</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            border-radius: 0 !important;
+        }
+
+        :root {
+            --bg-dark: #0A0A0A;
+            --white: #FFFFFF;
+            --gray: #888888;
+            --border: #333333;
+            --protein: #3B82F6;
+            --carbs: #F97316;
+            --fat: #EAB308;
+        }
+
+        body {
+            font-family: 'Inter', monospace;
+            background-color: var(--bg-dark);
+            color: var(--white);
+            min-height: 100vh;
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 0;
+        }
+
+        /* HEADER */
+        .header {
+            background-color: var(--bg-dark);
+            padding: 24px 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .avatar {
+            width: 56px;
+            height: 56px;
+            background-color: var(--white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 20px;
+            color: var(--bg-dark);
+            flex-shrink: 0;
+        }
+
+        .greeting {
+            font-size: 14px;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .username {
+            font-size: 22px;
+            font-weight: 700;
+            margin-top: 4px;
+        }
+
+        /* CALORIE DISPLAY */
+        .calorie-section {
+            padding: 48px 20px;
+            text-align: center;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .calorie-remaining {
+            font-size: 72px;
+            font-weight: 900;
+            line-height: 1;
+            letter-spacing: -4px;
+        }
+
+        .calorie-unit {
+            font-size: 24px;
+            font-weight: 500;
+            color: var(--gray);
+            margin-left: 4px;
+        }
+
+        .calorie-label {
+            font-size: 14px;
+            color: var(--gray);
+            margin-top: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .calorie-target {
+            font-size: 16px;
+            color: var(--gray);
+            margin-top: 8px;
+        }
+
+        .calorie-target span {
+            color: var(--white);
+            font-weight: 700;
+        }
+
+        /* MACRO BLOCKS */
+        .macro-section {
+            padding: 24px 20px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .macro-block {
+            border: 2px solid var(--border);
+            padding: 20px 12px;
+            text-align: center;
+        }
+
+        .macro-block.protein {
+            border-color: var(--protein);
+        }
+
+        .macro-block.carbs {
+            border-color: var(--carbs);
+        }
+
+        .macro-block.fat {
+            border-color: var(--fat);
+        }
+
+        .macro-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--gray);
+            margin-bottom: 8px;
+        }
+
+        .macro-block.protein .macro-label {
+            color: var(--protein);
+        }
+
+        .macro-block.carbs .macro-label {
+            color: var(--carbs);
+        }
+
+        .macro-block.fat .macro-label {
+            color: var(--fat);
+        }
+
+        .macro-value {
+            font-size: 32px;
+            font-weight: 900;
+            line-height: 1;
+        }
+
+        .macro-unit {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--gray);
+            margin-left: 2px;
+        }
+
+        /* FOOD LOG */
+        .food-log-section {
+            padding: 24px 20px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .section-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--gray);
+            margin-bottom: 20px;
+        }
+
+        .food-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .food-item:last-child {
+            border-bottom: none;
+        }
+
+        .food-time {
+            font-size: 12px;
+            color: var(--gray);
+            width: 48px;
+            flex-shrink: 0;
+        }
+
+        .food-indicator {
+            width: 8px;
+            height: 8px;
+            flex-shrink: 0;
+        }
+
+        .food-indicator.breakfast {
+            background-color: var(--carbs);
+        }
+
+        .food-indicator.lunch {
+            background-color: var(--protein);
+        }
+
+        .food-indicator.dinner {
+            background-color: var(--fat);
+        }
+
+        .food-info {
+            flex: 1;
+        }
+
+        .food-name {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .food-macros {
+            font-size: 12px;
+            color: var(--gray);
+            margin-top: 4px;
+        }
+
+        .food-calories {
+            font-size: 18px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        /* CAMERA CTA */
+        .camera-section {
+            padding: 32px 20px;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        .camera-btn {
+            display: block;
+            width: 100%;
+            padding: 20px;
+            background-color: var(--white);
+            color: var(--bg-dark);
+            border: 2px solid var(--white);
+            font-family: 'Inter', monospace;
+            font-size: 16px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .camera-btn:hover {
+            background-color: transparent;
+            color: var(--white);
+        }
+
+        /* SPACER FOR FIXED BUTTON */
+        .spacer {
+            height: 120px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header class="header">
+        <div class="avatar">陳</div>
+        <div>
+            <div class="greeting">今日營養追蹤</div>
+            <div class="username">陳大明</div>
+        </div>
+    </header>
+
+    <!-- CALORIE DISPLAY -->
+    <section class="calorie-section">
+        <div class="calorie-remaining">
+            1380<span class="calorie-unit">kcal</span>
+        </div>
+        <div class="calorie-label">剩餘熱量</div>
+        <div class="calorie-target">目標 <span>2200</span> kcal</div>
+    </section>
+
+    <!-- MACRO BLOCKS -->
+    <section class="macro-section">
+        <div class="macro-block protein">
+            <div class="macro-label">蛋白質</div>
+            <div class="macro-value">68<span class="macro-unit">g</span></div>
+        </div>
+        <div class="macro-block carbs">
+            <div class="macro-label">碳水</div>
+            <div class="macro-value">142<span class="macro-unit">g</span></div>
+        </div>
+        <div class="macro-block fat">
+            <div class="macro-label">脂肪</div>
+            <div class="macro-value">38<span class="macro-unit">g</span></div>
+        </div>
+    </section>
+
+    <!-- FOOD LOG -->
+    <section class="food-log-section">
+        <div class="section-title">今日飲食</div>
+        
+        <div class="food-item">
+            <div class="food-time">08:30</div>
+            <div class="food-indicator breakfast"></div>
+            <div class="food-info">
+                <div class="food-name">鮪魚三明治 + 黑咖啡</div>
+                <div class="food-macros">蛋白質 24g · 碳水 32g · 脂肪 12g</div>
+            </div>
+            <div class="food-calories">340 kcal</div>
+        </div>
+
+        <div class="food-item">
+            <div class="food-time">12:45</div>
+            <div class="food-indicator lunch"></div>
+            <div class="food-info">
+                <div class="food-name">雞胸肉沙拉碗</div>
+                <div class="food-macros">蛋白質 38g · 碳水 18g · 脂肪 8g</div>
+            </div>
+            <div class="food-calories">320 kcal</div>
+        </div>
+
+        <div class="food-item">
+            <div class="food-time">19:00</div>
+            <div class="food-indicator dinner"></div>
+            <div class="food-info">
+                <div class="food-name">烤鮭魚 + 糙米飯</div>
+                <div class="food-macros">蛋白質 32g · 碳水 45g · 脂肪 15g</div>
+            </div>
+            <div class="food-calories">460 kcal</div>
+        </div>
+    </section>
+
+    <div class="spacer"></div>
+
+    <!-- CAMERA CTA -->
+    <section class="camera-section">
+        <button class="camera-btn">📷 掃描食物</button>
+    </section>
+
+</body>
+</html>

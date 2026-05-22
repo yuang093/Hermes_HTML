@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CaloScanAi - 今日熱量</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Serif+TC:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #FFFBF5;
+            color: #4A4035;
+            min-height: 100vh;
+            padding: 20px;
+            padding-bottom: 100px;
+        }
+
+        .container {
+            max-width: 420px;
+            margin: 0 auto;
+        }
+
+        /* Header / Greeting */
+        .greeting {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 16px 0;
+            font-family: 'Noto Serif TC', Georgia, serif;
+        }
+
+        .sun-icon {
+            font-size: 24px;
+        }
+
+        .greeting h1 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #5C4F3D;
+        }
+
+        /* Calorie Display */
+        .calorie-hero {
+            text-align: center;
+            padding: 32px 0 24px;
+        }
+
+        .calorie-remaining {
+            font-family: 'Noto Serif TC', Georgia, serif;
+            font-size: 56px;
+            font-weight: 700;
+            color: #3D3428;
+            line-height: 1.1;
+        }
+
+        .calorie-remaining span {
+            font-size: 28px;
+            font-weight: 600;
+            color: #6B5D4D;
+        }
+
+        .calorie-label {
+            font-size: 15px;
+            color: #8B7D6B;
+            margin-top: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .calorie-target {
+            font-size: 13px;
+            color: #A69882;
+            margin-top: 4px;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            margin: 24px 0 32px;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background-color: #E8E0D5;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 37%;
+            background: linear-gradient(90deg, #D4A574 0%, #C4956A 100%);
+            border-radius: 4px;
+        }
+
+        .progress-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 12px;
+            color: #A69882;
+        }
+
+        /* Macro Cards */
+        .macro-section {
+            margin-bottom: 32px;
+        }
+
+        .macro-title {
+            font-family: 'Noto Serif TC', Georgia, serif;
+            font-size: 16px;
+            font-weight: 600;
+            color: #5C4F3D;
+            margin-bottom: 14px;
+        }
+
+        .macro-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .macro-card {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 16px 12px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(74, 64, 53, 0.06);
+        }
+
+        .macro-card.protein {
+            border-top: 3px solid #6B9FD4;
+        }
+
+        .macro-card.carbs {
+            border-top: 3px solid #E8A86B;
+        }
+
+        .macro-card.fat {
+            border-top: 3px solid #E8D06B;
+        }
+
+        .macro-name {
+            font-size: 12px;
+            color: #8B7D6B;
+            margin-bottom: 6px;
+        }
+
+        .macro-value {
+            font-family: 'Noto Serif TC', Georgia, serif;
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .macro-card.protein .macro-value {
+            color: #5A8AC4;
+        }
+
+        .macro-card.carbs .macro-value {
+            color: #D4894A;
+        }
+
+        .macro-card.fat .macro-value {
+            color: #C4A83A;
+        }
+
+        .macro-unit {
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        /* Food Log */
+        .food-log {
+            margin-bottom: 32px;
+        }
+
+        .food-log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .food-log-title {
+            font-family: 'Noto Serif TC', Georgia, serif;
+            font-size: 16px;
+            font-weight: 600;
+            color: #5C4F3D;
+        }
+
+        .food-log-link {
+            font-size: 13px;
+            color: #C4956A;
+            text-decoration: none;
+        }
+
+        .food-items {
+            background: #FFFFFF;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(74, 64, 53, 0.06);
+        }
+
+        .food-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            border-bottom: 1px solid #F0EBE3;
+        }
+
+        .food-item:last-child {
+            border-bottom: none;
+        }
+
+        .food-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .food-time {
+            font-size: 11px;
+            color: #A69882;
+        }
+
+        .food-name {
+            font-size: 15px;
+            color: #4A4035;
+        }
+
+        .food-calories {
+            font-family: 'Noto Serif TC', Georgia, serif;
+            font-size: 16px;
+            font-weight: 600;
+            color: #5C4F3D;
+        }
+
+        .food-calories span {
+            font-size: 12px;
+            font-weight: 400;
+            color: #8B7D6B;
+        }
+
+        /* Camera Button */
+        .camera-section {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 20px;
+            background: linear-gradient(to top, #FFFBF5 70%, transparent);
+            display: flex;
+            justify-content: center;
+        }
+
+        .camera-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            max-width: 380px;
+            padding: 16px 24px;
+            background: linear-gradient(135deg, #D4A574 0%, #C4956A 100%);
+            color: #FFFFFF;
+            border: none;
+            border-radius: 14px;
+            font-family: 'Inter', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(196, 149, 106, 0.35);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .camera-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(196, 149, 106, 0.45);
+        }
+
+        .camera-btn:active {
+            transform: translateY(0);
+        }
+
+        .camera-icon {
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Greeting -->
+        <header class="greeting">
+            <span class="sun-icon">☀️</span>
+            <h1>早安，今天是五月二日</h1>
+        </header>
+
+        <!-- Calorie Display -->
+        <section class="calorie-hero">
+            <div class="calorie-remaining">
+                1380 <span>大卡</span>
+            </div>
+            <p class="calorie-label">今日剩餘熱量</p>
+            <p class="calorie-target">目標 2200 大卡 · 已攝取 820 大卡</p>
+        </section>
+
+        <!-- Progress Bar -->
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+            <div class="progress-labels">
+                <span>0</span>
+                <span>820 / 2200 大卡</span>
+                <span>2200</span>
+            </div>
+        </div>
+
+        <!-- Macro Cards -->
+        <section class="macro-section">
+            <h2 class="macro-title">巨量營養素</h2>
+            <div class="macro-cards">
+                <div class="macro-card protein">
+                    <div class="macro-name">蛋白質</div>
+                    <div class="macro-value">68<span class="macro-unit">g</span></div>
+                </div>
+                <div class="macro-card carbs">
+                    <div class="macro-name">碳水</div>
+                    <div class="macro-value">142<span class="macro-unit">g</span></div>
+                </div>
+                <div class="macro-card fat">
+                    <div class="macro-name">脂肪</div>
+                    <div class="macro-value">38<span class="macro-unit">g</span></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Food Log -->
+        <section class="food-log">
+            <div class="food-log-header">
+                <h2 class="food-log-title">今日飲食</h2>
+                <a href="#" class="food-log-link">查看全部 →</a>
+            </div>
+            <div class="food-items">
+                <div class="food-item">
+                    <div class="food-info">
+                        <span class="food-time">08:30 早餐</span>
+                        <span class="food-name">鮭魚御飯糰 + 無糖豆漿</span>
+                    </div>
+                    <div class="food-calories">385 <span>大卡</span></div>
+                </div>
+                <div class="food-item">
+                    <div class="food-info">
+                        <span class="food-time">12:15 午餐</span>
+                        <span class="food-name">烤雞胸沙拉碗</span>
+                    </div>
+                    <div class="food-calories">435 <span>大卡</span></div>
+                </div>
+                <div class="food-item">
+                    <div class="food-info">
+                        <span class="food-time">15:45 點心</span>
+                        <span class="food-name">拿鐵咖啡（中杯）</span>
+                    </div>
+                    <div class="food-calories">150 <span>大卡</span></div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Camera Button -->
+    <div class="camera-section">
+        <button class="camera-btn">
+            <span class="camera-icon">📷</span>
+            拍照記錄飲食
+        </button>
+    </div>
+</body>
+</html>

@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CaloScan v1.0 - 熱量追蹤</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-dark: #0A0A0A;
+      --green: #22C55E;
+      --green-dim: #166534;
+      --blue: #3B82F6;
+      --orange: #F97316;
+      --yellow: #EAB308;
+      --white: #FFFFFF;
+    }
+
+    body {
+      font-family: 'Inter', 'Courier New', monospace;
+      background: var(--bg-dark);
+      color: var(--green);
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* CRT Scanlines Effect */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.15),
+        rgba(0, 0, 0, 0.15) 1px,
+        transparent 1px,
+        transparent 2px
+      );
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    /* CRT Glow Effect */
+    body::after {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.4) 100%);
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 16px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Terminal Header */
+    .terminal-header {
+      border: 1px solid var(--green);
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .terminal-header::before {
+      content: '● ● ●';
+      position: absolute;
+      left: 12px;
+      top: 8px;
+      font-size: 8px;
+      letter-spacing: 2px;
+    }
+
+    .terminal-title {
+      text-align: center;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      margin-top: 8px;
+    }
+
+    .terminal-greeting {
+      font-size: 11px;
+      color: var(--green-dim);
+      margin-top: 4px;
+    }
+
+    /* Calorie Display */
+    .calorie-display {
+      border: 1px solid var(--green);
+      padding: 24px 16px;
+      text-align: center;
+      margin-bottom: 16px;
+      position: relative;
+    }
+
+    .calorie-label {
+      font-size: 10px;
+      color: var(--green-dim);
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+    }
+
+    .calorie-value {
+      font-size: 56px;
+      font-weight: 800;
+      line-height: 1;
+      text-shadow: 0 0 20px var(--green);
+    }
+
+    .calorie-unit {
+      font-size: 16px;
+      font-weight: 500;
+      margin-left: 4px;
+    }
+
+    .calorie-target {
+      font-size: 12px;
+      color: var(--green-dim);
+      margin-top: 8px;
+    }
+
+    .calorie-target span {
+      color: var(--green);
+    }
+
+    /* Progress Bar */
+    .progress-container {
+      margin-top: 16px;
+      border: 1px solid var(--green);
+      padding: 12px;
+    }
+
+    .progress-bar {
+      height: 8px;
+      background: var(--bg-dark);
+      border: 1px solid var(--green-dim);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 37%;
+      background: var(--green);
+      box-shadow: 0 0 10px var(--green);
+    }
+
+    .progress-text {
+      font-size: 10px;
+      margin-top: 8px;
+      color: var(--green-dim);
+    }
+
+    /* Macro Blocks */
+    .macro-container {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .macro-block {
+      border: 1px solid;
+      padding: 16px 12px;
+      text-align: center;
+      position: relative;
+    }
+
+    .macro-block.protein {
+      border-color: var(--blue);
+    }
+
+    .macro-block.carbs {
+      border-color: var(--orange);
+    }
+
+    .macro-block.fat {
+      border-color: var(--yellow);
+    }
+
+    .macro-label {
+      font-size: 9px;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    .macro-block.protein .macro-label { color: var(--blue); }
+    .macro-block.carbs .macro-label { color: var(--orange); }
+    .macro-block.fat .macro-label { color: var(--yellow); }
+
+    .macro-value {
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .macro-block.protein .macro-value { 
+      color: var(--blue);
+      text-shadow: 0 0 10px var(--blue);
+    }
+    .macro-block.carbs .macro-value { 
+      color: var(--orange);
+      text-shadow: 0 0 10px var(--orange);
+    }
+    .macro-block.fat .macro-value { 
+      color: var(--yellow);
+      text-shadow: 0 0 10px var(--yellow);
+    }
+
+    .macro-unit {
+      font-size: 11px;
+      margin-top: 4px;
+    }
+
+    .macro-block.protein .macro-unit { color: var(--blue); }
+    .macro-block.carbs .macro-unit { color: var(--orange); }
+    .macro-block.fat .macro-unit { color: var(--yellow); }
+
+    /* Food Log */
+    .food-log {
+      border: 1px solid var(--green);
+      margin-bottom: 16px;
+    }
+
+    .food-log-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--green);
+      font-size: 11px;
+      letter-spacing: 2px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .food-log-list {
+      padding: 8px 0;
+    }
+
+    .food-item {
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(34, 197, 94, 0.2);
+    }
+
+    .food-item:last-child {
+      border-bottom: none;
+    }
+
+    .food-info {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .food-time {
+      font-size: 10px;
+      color: var(--green-dim);
+      min-width: 48px;
+    }
+
+    .food-name {
+      font-size: 13px;
+    }
+
+    .food-calories {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .food-calories span {
+      font-size: 10px;
+      color: var(--green-dim);
+      font-weight: 400;
+    }
+
+    /* Camera Button */
+    .camera-section {
+      margin-bottom: 16px;
+    }
+
+    .camera-button {
+      width: 100%;
+      border: 2px solid var(--green);
+      background: transparent;
+      color: var(--green);
+      padding: 18px 24px;
+      font-family: 'Inter', monospace;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s;
+    }
+
+    .camera-button:hover {
+      background: var(--green);
+      color: var(--bg-dark);
+      box-shadow: 0 0 20px var(--green);
+    }
+
+    .camera-button::before {
+      content: '[ ';
+    }
+
+    .camera-button::after {
+      content: ' ]';
+    }
+
+    .blink-cursor {
+      display: inline-block;
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    /* Bottom Status */
+    .status-bar {
+      border: 1px solid var(--green);
+      padding: 12px 16px;
+      font-size: 10px;
+      display: flex;
+      justify-content: space-between;
+      color: var(--green-dim);
+    }
+
+    .status-item span {
+      color: var(--green);
+    }
+
+    /* Flicker Animation */
+    @keyframes flicker {
+      0%, 100% { opacity: 1; }
+      92% { opacity: 1; }
+      93% { opacity: 0.8; }
+      94% { opacity: 1; }
+      97% { opacity: 0.9; }
+    }
+
+    .container {
+      animation: flicker 4s infinite;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Terminal Header -->
+    <div class="terminal-header">
+      <div class="terminal-title">> CALOSCAN v1.0</div>
+      <div class="terminal-greeting">SYS_INIT :: 熱量追蹤系統啟動</div>
+    </div>
+
+    <!-- Calorie Display -->
+    <div class="calorie-display">
+      <div class="calorie-label">// 今日剩餘熱量</div>
+      <div class="calorie-value">1380<span class="calorie-unit">kcal</span></div>
+      <div class="calorie-target">目標攝取 <span>2200 kcal</span></div>
+      
+      <div class="progress-container">
+        <div class="progress-bar">
+          <div class="progress-fill"></div>
+        </div>
+        <div class="progress-text">已攝取 820 kcal / 2200 kcal</div>
+      </div>
+    </div>
+
+    <!-- Macro Blocks -->
+    <div class="macro-container">
+      <div class="macro-block protein">
+        <div class="macro-label">蛋白質</div>
+        <div class="macro-value">68</div>
+        <div class="macro-unit">公克</div>
+      </div>
+      <div class="macro-block carbs">
+        <div class="macro-label">碳水</div>
+        <div class="macro-value">142</div>
+        <div class="macro-unit">公克</div>
+      </div>
+      <div class="macro-block fat">
+        <div class="macro-label">脂肪</div>
+        <div class="macro-value">38</div>
+        <div class="macro-unit">公克</div>
+      </div>
+    </div>
+
+    <!-- Food Log -->
+    <div class="food-log">
+      <div class="food-log-header">
+        <span>// 攝取記錄</span>
+        <span>TODAY_LOG</span>
+      </div>
+      <div class="food-log-list">
+        <div class="food-item">
+          <div class="food-info">
+            <span class="food-time">08:30</span>
+            <span class="food-name">鮭魚御三家餐盒</span>
+          </div>
+          <div class="food-calories">520 <span>kcal</span></div>
+        </div>
+        <div class="food-item">
+          <div class="food-info">
+            <span class="food-time">12:45</span>
+            <span class="food-name">野菜沙拉+雞胸肉</span>
+          </div>
+          <div class="food-calories">300 <span>kcal</span></div>
+        </div>
+        <div class="food-item">
+          <div class="food-info">
+            <span class="food-time">18:20</span>
+            <span class="food-name">豆漿一杯、茶葉蛋</span>
+          </div>
+          <div class="food-calories">180 <span>kcal</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Camera Button -->
+    <div class="camera-section">
+      <button class="camera-button">
+        <span class="blink-cursor">_</span> 掃描食物
+      </button>
+    </div>
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <div class="status-item">系統狀態: <span>正常</span></div>
+      <div class="status-item">時間: <span id="current-time">--:--:--</span></div>
+    </div>
+  </div>
+
+  <script>
+    function updateTime() {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('zh-TW', { hour12: false });
+      document.getElementById('current-time').textContent = timeStr;
+    }
+    updateTime();
+    setInterval(updateTime, 1000);
+  </script>
+</body>
+</html>
