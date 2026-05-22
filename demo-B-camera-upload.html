@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>CaloScanAi - 拍照上傳</title>
+<style>
+  :root {
+    --pink-50: #FFF5F7;
+    --pink-100: #FFF0F3;
+    --pink-200: #FFE4EB;
+    --pink-400: #FFB8C9;
+    --pink-500: #FF8FAB;
+    --pink-600: #E8777A;
+    --orange-400: #FB923C;
+    --orange-500: #F97316;
+    --warm-bg: #FFFAF5;
+    --card-bg: #FFFFFF;
+    --text-primary: #2D1B14;
+    --text-secondary: #7C6354;
+    --border: #F0E6E0;
+    --success: #4ADE80;
+    --radius-sm: 8px;
+    --radius-md: 16px;
+    --radius-lg: 24px;
+    --radius-xl: 32px;
+    --shadow-sm: 0 1px 3px rgba(45,27,20,0.06);
+    --shadow-md: 0 4px 16px rgba(45,27,20,0.10);
+    --shadow-lg: 0 8px 32px rgba(45,27,20,0.14);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--warm-bg);
+    color: var(--text-primary);
+    min-height: 100dvh;
+    padding-bottom: 100px;
+    overflow-x: hidden;
+  }
+  /* ── Header ── */
+  .header {
+    background: var(--card-bg);
+    border-bottom: 2px solid var(--border);
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .header-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--pink-600);
+    letter-spacing: -0.3px;
+  }
+  .meal-tabs {
+    display: flex;
+    gap: 6px;
+    padding: 12px 16px;
+    background: var(--card-bg);
+    overflow-x: auto;
+    scrollbar-width: none;
+    justify-content: center;
+  }
+  .meal-tabs::-webkit-scrollbar { display: none; }
+  .meal-tab {
+    flex-shrink: 0;
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 2px solid var(--border);
+    background: var(--card-bg);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .meal-tab.active {
+    background: var(--pink-500);
+    border-color: var(--pink-500);
+    color: #fff;
+    box-shadow: var(--shadow-sm);
+  }
+  /* ── Main ── */
+  .main { padding: 20px 16px; max-width: 480px; margin: 0 auto; }
+  /* ── Upload Zone ── */
+  .upload-zone {
+    border: 3px dashed var(--pink-400);
+    border-radius: var(--radius-xl);
+    background: var(--pink-50);
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .upload-zone:active { transform: scale(0.98); }
+  .upload-zone.drag-over {
+    border-color: var(--pink-500);
+    background: var(--pink-100);
+  }
+  .upload-icon {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 16px;
+    background: var(--pink-200);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+  }
+  .upload-zone h3 {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+  }
+  .upload-zone p { font-size: 14px; color: var(--text-secondary); }
+  .camera-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 16px;
+    padding: 12px 24px;
+    background: var(--orange-500);
+    color: #fff;
+    border: none;
+    border-radius: 24px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: var(--shadow-md);
+    transition: all 0.2s;
+  }
+  .camera-btn:active { transform: scale(0.96); box-shadow: var(--shadow-sm); }
+  .camera-btn svg { width: 20px; height: 20px; }
+  #fileInput { display: none; }
+  /* ── Preview ── */
+  .preview-section { display: none; }
+  .preview-section.active { display: block; }
+  .preview-img {
+    width: 100%;
+    max-height: 320px;
+    object-fit: cover;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    margin-bottom: 16px;
+  }
+  /* ── Analyzing ── */
+  .analyzing-section { display: none; text-align: center; padding: 40px 0; }
+  .analyzing-section.active { display: block; }
+  .spinner {
+    width: 64px;
+    height: 64px;
+    border: 5px solid var(--pink-200);
+    border-top-color: var(--pink-500);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 20px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .analyzing-section p { font-size: 16px; color: var(--text-secondary); font-weight: 500; }
+  /* ── Result Card ── */
+  .result-section { display: none; }
+  .result-section.active { display: block; }
+  .result-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    box-shadow: var(--shadow-lg);
+    border: 2px solid var(--pink-200);
+    position: relative;
+    overflow: hidden;
+  }
+  .result-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--pink-400), var(--orange-400));
+  }
+  .result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+  }
+  .result-food-name {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--text-primary);
+  }
+  .result-confidence {
+    font-size: 12px;
+    color: var(--text-secondary);
+    background: var(--pink-100);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+  }
+  .result-calories-hero {
+    text-align: center;
+    padding: 20px 0;
+    border: 2px solid var(--pink-200);
+    border-radius: var(--radius-md);
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, var(--pink-50), var(--warm-bg));
+  }
+  .result-calories-hero .num {
+    font-size: 48px;
+    font-weight: 900;
+    color: var(--pink-600);
+    line-height: 1;
+  }
+  .result-calories-hero .unit {
+    font-size: 16px;
+    color: var(--text-secondary);
+    font-weight: 600;
+  }
+  .result-nutrients {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .nutrient-item {
+    background: var(--warm-bg);
+    border-radius: var(--radius-md);
+    padding: 14px 10px;
+    text-align: center;
+    border: 1.5px solid var(--border);
+  }
+  .nutrient-item label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+  .nutrient-item input {
+    width: 100%;
+    text-align: center;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text-primary);
+    border: none;
+    background: transparent;
+    outline: none;
+    padding: 0;
+  }
+  .nutrient-item .nutr-unit {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+  .btn-row { display: flex; gap: 12px; }
+  .btn-primary {
+    flex: 1;
+    padding: 16px;
+    background: var(--pink-500);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: var(--shadow-md);
+    transition: all 0.2s;
+  }
+  .btn-primary:active { transform: scale(0.97); }
+  .btn-secondary {
+    flex: 1;
+    padding: 16px;
+    background: var(--card-bg);
+    color: var(--text-primary);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-secondary:active { transform: scale(0.97); }
+  /* ── Success Toast ── */
+  .toast {
+    position: fixed;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-80px);
+    background: var(--success);
+    color: #fff;
+    padding: 14px 28px;
+    border-radius: 24px;
+    font-size: 15px;
+    font-weight: 700;
+    box-shadow: var(--shadow-lg);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  /* ── Step indicator ── */
+  .step-indicator {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .step-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--pink-200);
+    transition: all 0.3s;
+  }
+  .step-dot.active { background: var(--pink-500); width: 24px; border-radius: 4px; }
+  .step-dot.done { background: var(--success); }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-title">📸 食物拍照</div>
+  <div style="font-size:12px;color:var(--text-secondary);font-weight:600;">May 22, 2026</div>
+</div>
+
+<!-- Meal Tabs -->
+<div class="meal-tabs">
+  <button class="meal-tab" data-meal="breakfast">🌅 早餐</button>
+  <button class="meal-tab active" data-meal="lunch">☀️ 午餐</button>
+  <button class="meal-tab" data-meal="dinner">🌙 晚餐</button>
+  <button class="meal-tab" data-meal="snack">🍪 點心</button>
+</div>
+
+<div class="main">
+  <!-- Step dots -->
+  <div class="step-indicator">
+    <div class="step-dot active" id="dot1"></div>
+    <div class="step-dot" id="dot2"></div>
+    <div class="step-dot" id="dot3"></div>
+  </div>
+
+  <!-- Step 1: Upload -->
+  <div class="upload-section active" id="step1">
+    <div class="upload-zone" id="uploadZone">
+      <div class="upload-icon">📷</div>
+      <h3>拍張食物照片</h3>
+      <p>或拖放圖片到这里</p>
+      <button class="camera-btn" id="cameraBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
+        選擇圖片
+      </button>
+    </div>
+    <input type="file" id="fileInput" accept="image/*">
+  </div>
+
+  <!-- Step 2: Preview -->
+  <div class="preview-section" id="step2">
+    <img class="preview-img" id="previewImg" src="" alt="預覽">
+    <div class="btn-row">
+      <button class="btn-secondary" id="btnRetake">重新選擇</button>
+      <button class="btn-primary" id="btnAnalyze">🔍 分析食物</button>
+    </div>
+  </div>
+
+  <!-- Step 3: Analyzing -->
+  <div class="analyzing-section" id="step3">
+    <div class="spinner"></div>
+    <p>AI 正在分析食物營養...</p>
+  </div>
+
+  <!-- Step 4: Result -->
+  <div class="result-section" id="step4">
+    <div class="result-card">
+      <div class="result-header">
+        <div class="result-food-name" id="resName">—</div>
+        <div class="result-confidence" id="resConf">92% 信心</div>
+      </div>
+      <div class="result-calories-hero">
+        <div class="num" id="resCal">—</div>
+        <div class="unit">kcal</div>
+      </div>
+      <div class="result-nutrients">
+        <div class="nutrient-item">
+          <label>蛋白質</label>
+          <input type="number" id="resProtein" value="0">
+          <div class="nutr-unit">g</div>
+        </div>
+        <div class="nutrient-item">
+          <label>碳水</label>
+          <input type="number" id="resCarbs" value="0">
+          <div class="nutr-unit">g</div>
+        </div>
+        <div class="nutrient-item">
+          <label>脂肪</label>
+          <input type="number" id="resFat" value="0">
+          <div class="nutr-unit">g</div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn-secondary" id="btnNext">分析下一張</button>
+        <button class="btn-primary" id="btnSave">✓ 儲存記錄</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">✓ 記錄已儲存</div>
+
+<script>
+(function(){
+  // State
+  let currentStep = 1;
+  let selectedMeal = 'lunch';
+  let previewSrc = '';
+
+  // Elements
+  const uploadSection = document.getElementById('step1');
+  const previewSection = document.getElementById('step2');
+  const analyzingSection = document.getElementById('step3');
+  const resultSection = document.getElementById('step4');
+  const previewImg = document.getElementById('previewImg');
+  const fileInput = document.getElementById('fileInput');
+  const uploadZone = document.getElementById('uploadZone');
+  const cameraBtn = document.getElementById('cameraBtn');
+  const btnRetake = document.getElementById('btnRetake');
+  const btnAnalyze = document.getElementById('btnAnalyze');
+  const btnNext = document.getElementById('btnNext');
+  const btnSave = document.getElementById('btnSave');
+  const toast = document.getElementById('toast');
+  const dot1 = document.getElementById('dot1');
+  const dot2 = document.getElementById('dot2');
+  const dot3 = document.getElementById('dot3');
+
+  // Meal tabs
+  document.querySelectorAll('.meal-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.meal-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      selectedMeal = tab.dataset.meal;
+    });
+  });
+
+  // File select
+  cameraBtn.addEventListener('click', (e) => { e.stopPropagation(); fileInput.click(); });
+  uploadZone.addEventListener('click', () => fileInput.click());
+
+  // Drag & drop
+  uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+  uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+  uploadZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadZone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) handleFile(file);
+  });
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files[0]) handleFile(fileInput.files[0]);
+  });
+
+  function handleFile(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      previewSrc = e.target.result;
+      previewImg.src = previewSrc;
+      goStep(2);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  btnRetake.addEventListener('click', () => {
+    fileInput.value = '';
+    goStep(1);
+  });
+
+  btnAnalyze.addEventListener('click', () => {
+    goStep(3);
+    setTimeout(() => {
+      // Mock AI result
+      document.getElementById('resName').textContent = '蔥抓餅加蛋';
+      document.getElementById('resCal').textContent = '380';
+      document.getElementById('resProtein').value = '12.5';
+      document.getElementById('resCarbs').value = '45';
+      document.getElementById('resFat').value = '18';
+      document.getElementById('resConf').textContent = '92% 信心';
+      goStep(4);
+    }, 2000);
+  });
+
+  btnNext.addEventListener('click', () => {
+    fileInput.value = '';
+    goStep(1);
+  });
+
+  btnSave.addEventListener('click', () => {
+    showToast();
+    setTimeout(() => hideToast(), 2500);
+  });
+
+  function goStep(n) {
+    currentStep = n;
+    uploadSection.classList.toggle('active', n === 1);
+    previewSection.classList.toggle('active', n === 2);
+    analyzingSection.classList.toggle('active', n === 3);
+    resultSection.classList.toggle('active', n === 4);
+
+    dot1.className = 'step-dot' + (n >= 1 ? (n > 1 ? ' done' : ' active') : '');
+    dot2.className = 'step-dot' + (n >= 2 ? (n > 2 ? ' done' : ' active') : '');
+    dot3.className = 'step-dot' + (n >= 3 ? (n > 3 ? ' done' : ' active') : '');
+  }
+
+  function showToast() {
+    toast.classList.add('show');
+  }
+  function hideToast() {
+    toast.classList.remove('show');
+  }
+})();
+</script>
+</body>
+</html>

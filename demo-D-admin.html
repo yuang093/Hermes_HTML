@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>管理員後台 — CaloScanAi</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f8f9fa;
+  --surface: #ffffff;
+  --border: #e9ecef;
+  --text: #212529;
+  --text-secondary: #495057;
+  --text-muted: #6c757d;
+  --accent: #4f46e5;
+  --accent-hover: #4338ca;
+  --success: #16a34a;
+  --success-bg: #dcfce7;
+  --danger: #dc2626;
+  --danger-bg: #fee2e2;
+  --warning: #d97706;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.05);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,.1);
+  --radius: 12px;
+}
+
+[data-theme="dark"] {
+  --bg: #0f1117;
+  --surface: #1e222d;
+  --border: #2d3245;
+  --text: #f1f3f5;
+  --text-secondary: #adb5bd;
+  --text-muted: #6c757d;
+  --success-bg: #14532d;
+  --danger-bg: #450a0a;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ── Header ── */
+.header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 18px;
+}
+.header-brand .badge {
+  background: var(--danger);
+  color: #fff;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+.header-actions { display: flex; gap: 10px; }
+.btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: all .15s;
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--bg); }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-danger:hover { opacity: .85; }
+
+/* ── Tab Nav ── */
+.tab-nav {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 0;
+  padding: 0 20px;
+  overflow-x: auto;
+}
+.tab-btn {
+  padding: 14px 20px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .15s;
+}
+.tab-btn.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.tab-btn:hover { color: var(--text); }
+
+/* ── Page Content ── */
+.page { padding: 24px 20px; }
+.page.hidden { display: none; }
+
+/* ── Stats Cards ── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+}
+.stat-card .label {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  margin-bottom: 6px;
+}
+.stat-card .value {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+}
+.stat-card .sub { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+.stat-card.success .value { color: var(--success); }
+
+/* ── Charts Row ── */
+.charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 28px; }
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+}
+.panel-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+
+/* SVG Chart */
+.chart-svg { width: 100%; height: 140px; }
+.chart-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.chart-area {
+  fill: url(#chartGrad);
+  opacity: .15;
+}
+.chart-dot { fill: var(--accent); }
+.chart-label { font-size: 11px; fill: var(--text-muted); }
+
+/* Top Foods List */
+.food-list { list-style: none; }
+.food-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.food-item:last-child { border-bottom: none; }
+.food-rank {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.food-rank.gold { background: #f59e0b; }
+.food-rank.silver { background: #9ca3af; }
+.food-rank.bronze { background: #b45309; }
+.food-name { font-size: 13px; flex: 1; color: var(--text); }
+.food-count { font-size: 12px; color: var(--text-muted); }
+
+/* ── User Table ── */
+.toolbar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.search-box {
+  flex: 1;
+  min-width: 200px;
+  padding: 9px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  background: var(--surface);
+  color: var(--text);
+}
+.search-box::placeholder { color: var(--text-muted); }
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.data-table th {
+  text-align: left;
+  padding: 10px 12px;
+  background: var(--bg);
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  border-bottom: 1px solid var(--border);
+}
+.data-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+.data-table tr:hover td { background: var(--bg); }
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  margin-right: 8px;
+}
+.user-cell { display: flex; align-items: center; }
+.role-badge {
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.role-badge.admin { background: var(--accent); color: #fff; }
+.role-badge.user { background: var(--bg); color: var(--text-secondary); border: 1px solid var(--border); }
+.action-btn {
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  background: none;
+  color: var(--text-muted);
+  transition: all .15s;
+}
+.action-btn:hover { background: var(--bg); color: var(--text); }
+.action-btn.delete:hover { color: var(--danger); }
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 16px;
+}
+.page-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .15s;
+}
+.page-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.page-btn:hover:not(.active) { background: var(--bg); }
+
+/* ── Backup Panel ── */
+.backup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.backup-meta { font-size: 13px; color: var(--text-secondary); }
+.backup-list { list-style: none; }
+.backup-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.backup-item:last-child { border-bottom: none; }
+.backup-info .filename { font-size: 14px; font-weight: 500; color: var(--text); }
+.backup-info .meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.backup-actions { display: flex; gap: 8px; }
+.btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 6px; }
+.cron-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  background: var(--success-bg);
+  color: var(--success);
+}
+.cron-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--success);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .4; }
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .charts-row { grid-template-columns: 1fr; }
+  .data-table { font-size: 12px; }
+  .data-table th, .data-table td { padding: 8px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+  <div class="header-brand">
+    <span>CaloScanAi</span>
+    <span class="badge">ADMIN</span>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-secondary" onclick="alert('通知功能開發中')">🔔</button>
+    <button class="btn btn-secondary">登出</button>
+  </div>
+</header>
+
+<!-- Tab Navigation -->
+<nav class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('dashboard')">📊 儀表板</button>
+  <button class="tab-btn" onclick="switchTab('users')">👥 用戶管理</button>
+  <button class="tab-btn" onclick="switchTab('backup')">💾 備份管理</button>
+</nav>
+
+<!-- ═══ Dashboard Tab ═══ -->
+<section id="page-dashboard" class="page">
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="label">總用戶數</div>
+      <div class="value">23</div>
+      <div class="sub">累計註冊人數</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">總記錄數</div>
+      <div class="value">892</div>
+      <div class="sub">飲食記錄總計</div>
+    </div>
+    <div class="stat-card success">
+      <div class="label">今日新增</div>
+      <div class="value">3</div>
+      <div class="sub">較昨日 +1</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">今日記錄</div>
+      <div class="value">12</div>
+      <div class="sub">今日已上傳</div>
+    </div>
+  </div>
+
+  <!-- Charts Row -->
+  <div class="charts-row">
+    <!-- 7-day Trend -->
+    <div class="panel">
+      <div class="panel-title">📈 7 日飲食記錄趨勢</div>
+      <svg class="chart-svg" viewBox="0 0 300 100" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#4f46e5" stop-opacity="1"/>
+            <stop offset="100%" stop-color="#4f46e5" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <!-- Area -->
+        <path class="chart-area" d="M0,90 L42,70 L84,75 L126,45 L168,55 L210,30 L252,25 L300,20 L300,100 L0,100 Z"/>
+        <!-- Line -->
+        <path class="chart-line" d="M0,90 L42,70 L84,75 L126,45 L168,55 L210,30 L252,25 L300,20"/>
+        <!-- Dots -->
+        <circle class="chart-dot" cx="0" cy="90" r="4"/>
+        <circle class="chart-dot" cx="42" cy="70" r="4"/>
+        <circle class="chart-dot" cx="84" cy="75" r="4"/>
+        <circle class="chart-dot" cx="126" cy="45" r="4"/>
+        <circle class="chart-dot" cx="168" cy="55" r="4"/>
+        <circle class="chart-dot" cx="210" cy="30" r="4"/>
+        <circle class="chart-dot" cx="252" cy="25" r="4"/>
+        <!-- Labels -->
+        <text class="chart-label" x="0" y="110">一</text>
+        <text class="chart-label" x="42" y="110">二</text>
+        <text class="chart-label" x="84" y="110">三</text>
+        <text class="chart-label" x="126" y="110">四</text>
+        <text class="chart-label" x="168" y="110">五</text>
+        <text class="chart-label" x="210" y="110">六</text>
+        <text class="chart-label" x="252" y="110">日</text>
+      </svg>
+    </div>
+
+    <!-- Top Foods -->
+    <div class="panel">
+      <div class="panel-title">🏆 TOP 10 熱門食物</div>
+      <ul class="food-list">
+        <li class="food-item"><span class="food-rank gold">1</span><span class="food-name">便利商店雞胸肉</span><span class="food-count">89 筆</span></li>
+        <li class="food-item"><span class="food-rank silver">2</span><span class="food-name">無糖綠茶</span><span class="food-count">71 筆</span></li>
+        <li class="food-item"><span class="food-rank bronze">3</span><span class="food-name">茶葉蛋</span><span class="food-count">65 筆</span></li>
+        <li class="food-item"><span class="food-rank">4</span><span class="food-name">地瓜</span><span class="food-count">58 筆</span></li>
+        <li class="food-item"><span class="food-rank">5</span><span class="food-name">生菜沙拉</span><span class="food-count">47 筆</span></li>
+        <li class="food-item"><span class="food-rank">6</span><span class="food-name">無糖豆漿</span><span class="food-count">43 筆</span></li>
+        <li class="food-item"><span class="food-rank">7</span><span class="food-name">香蕉</span><span class="food-count">39 筆</span></li>
+        <li class="food-item"><span class="food-rank">8</span><span class="food-name">蛋餅</span><span class="food-count">34 筆</span></li>
+        <li class="food-item"><span class="food-rank">9</span><span class="food-name">水煮餐盒</span><span class="food-count">31 筆</span></li>
+        <li class="food-item"><span class="food-rank">10</span><span class="food-name">手搖飲（半糖）</span><span class="food-count">28 筆</span></li>
+      </ul>
+    </div>
+  </div>
+
+</section>
+
+<!-- ═══ Users Tab ═══ -->
+<section id="page-users" class="page hidden">
+
+  <div class="toolbar">
+    <input type="text" class="search-box" placeholder="搜尋用户名稱或 Email..." id="userSearch" oninput="filterUsers()">
+    <button class="btn btn-primary">＋ 新增用戶</button>
+  </div>
+
+  <div style="overflow-x:auto;">
+    <table class="data-table" id="userTable">
+      <thead>
+        <tr>
+          <th>用戶</th>
+          <th>角色</th>
+          <th>每日熱量目標</th>
+          <th>註冊日期</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><div class="user-cell"><span class="user-avatar">昱</span><span>姜昱安</span></div><div style="font-size:12px;color:var(--text-muted)">yu.an093@gmail.com</div></td><td><span class="role-badge admin">管理員</span></td><td>2000 kcal</td><td>2026-05-10</td><td><button class="action-btn">✏️</button> <button class="action-btn delete">🗑️</button></td></tr>
+        <tr><td><div class="user-cell"><span class="user-avatar" style="background:#16a34a">小</span><span>小美</span></div><div style="font-size:12px;color:var(--text-muted)">mei@example.com</div></td><td><span class="role-badge user">用戶</span></td><td>1800 kcal</td><td>2026-05-12</td><td><button class="action-btn">✏️</button> <button class="action-btn delete">🗑️</button></td></tr>
+        <tr><td><div class="user-cell"><span class="user-avatar" style="background:#d97706">阿</span><span>阿志</span></div><div style="font-size:12px;color:var(--text-muted)">achi@example.com</div></td><td><span class="role-badge user">用戶</span></td><td>2500 kcal</td><td>2026-05-14</td><td><button class="action-btn">✏️</button> <button class="action-btn delete">🗑️</button></td></tr>
+        <tr><td><div class="user-cell"><span class="user-avatar" style="background:#dc2626">慧</span><span>慧娟</span></div><div style="font-size:12px;color:var(--text-muted)">huijuan@example.com</div></td><td><span class="role-badge user">用戶</span></td><td>1600 kcal</td><td>2026-05-15</td><td><button class="action-btn">✏️</button> <button class="action-btn delete">🗑️</button></td></tr>
+        <tr><td><div class="user-cell"><span class="user-avatar" style="background:#7c3aed">威</span><span>威廉</span></div><div style="font-size:12px;color:var(--text-muted)">william@example.com</div></td><td><span class="role-badge user">用戶</span></td><td>2200 kcal</td><td>2026-05-16</td><td><button class="action-btn">✏️</button> <button class="action-btn delete">🗑️</button></td></tr>
+        <tr><td><div class="user-cell"><span class="user-avatar" style="background:#0891b2">怡</span><span>怡君</span></div><div style="font-size:12px;color:var(--text-muted)">yijun@example.com</div></td><td><span class="role-badge user">用戶</span></td><td>1900 kcal</td><td>2026-05-17</td><td><button class="action-btn">✏️</button> <button class="action-btn delete">🗑️</button></td></tr>
+        <tr><td><div class="user-cell"><span class="user-avatar" style="background:#be123c">凱</span><span>凱文</span></div><div style="font-size:12px;color:var(--text-muted)">kevin@example.com</div></td><td><span class="role-badge user">用戶</span></td><td>2400 kcal</td><td>2026-05-18</td><td><button class="action-btn">✏️</button> <button class="action-btn delete">🗑️</button></td></tr>
+        <tr><td><div class="user-cell"><span class="user-avatar" style="background:#0f766e">莉</span><span>莉莎</span></div><div style="font-size:12px;color:var(--text-muted)">lisa@example.com</div></td><td><span class="role-badge user">用戶</span></td><td>1700 kcal</td><td>2026-05-19</td><td><button class="action-btn">✏️</button> <button class="action-btn delete">🗑️</button></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination">
+    <button class="page-btn">«</button>
+    <button class="page-btn active">1</button>
+    <button class="page-btn">2</button>
+    <button class="page-btn">3</button>
+    <button class="page-btn">»</button>
+  </div>
+
+</section>
+
+<!-- ═══ Backup Tab ═══ -->
+<section id="page-backup" class="page hidden">
+
+  <div class="backup-header">
+    <div>
+      <div style="font-weight:600;font-size:16px;">💾 資料庫備份</div>
+      <div class="backup-meta">備份會同時包含資料庫快照與上傳檔案（圖片）</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <span class="cron-status"><span class="cron-dot"></span>Cron 已啟用（每日 03:00）</span>
+      <button class="btn btn-primary" onclick="triggerBackup()">立即備份</button>
+    </div>
+  </div>
+
+  <!-- Manual Backup -->
+  <div class="panel" style="margin-bottom:20px;">
+    <div class="panel-title">📦 手動備份</div>
+    <div id="backupStatus" style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">
+      上次備份：2026-05-22 03:00（2 小時前）— 大小：14.2 MB
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-secondary btn-sm" onclick="showToast('下載功能開發中')">⬇️ 下載最新備份</button>
+      <button class="btn btn-secondary btn-sm" onclick="showToast('還原功能開發中')">🔄 還原至本機</button>
+    </div>
+  </div>
+
+  <!-- Backup History -->
+  <div class="panel">
+    <div class="panel-title">📋 備份歷史</div>
+    <ul class="backup-list">
+      <li class="backup-item">
+        <div class="backup-info">
+          <div class="filename">caloscan_db_20260522.sql + caloscan_uploads_20260522.tar.gz</div>
+          <div class="meta">2026-05-22 03:00 · 14.2 MB</div>
+        </div>
+        <div class="backup-actions">
+          <button class="btn btn-secondary btn-sm" onclick="showToast('下載中...')">⬇️</button>
+          <button class="btn btn-danger btn-sm" onclick="confirmRestore()">還原</button>
+        </div>
+      </li>
+      <li class="backup-item">
+        <div class="backup-info">
+          <div class="filename">caloscan_db_20260521.sql + caloscan_uploads_20260521.tar.gz</div>
+          <div class="meta">2026-05-21 03:00 · 13.8 MB</div>
+        </div>
+        <div class="backup-actions">
+          <button class="btn btn-secondary btn-sm" onclick="showToast('下載中...')">⬇️</button>
+          <button class="btn btn-danger btn-sm" onclick="confirmRestore()">還原</button>
+        </div>
+      </li>
+      <li class="backup-item">
+        <div class="backup-info">
+          <div class="filename">caloscan_db_20260520.sql + caloscan_uploads_20260520.tar.gz</div>
+          <div class="meta">2026-05-20 03:00 · 13.5 MB</div>
+        </div>
+        <div class="backup-actions">
+          <button class="btn btn-secondary btn-sm" onclick="showToast('下載中...')">⬇️</button>
+          <button class="btn btn-danger btn-sm" onclick="confirmRestore()">還原</button>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+</section>
+
+<!-- Toast -->
+<div id="toast" style="position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:#16a34a;color:#fff;padding:12px 20px;border-radius:10px;font-size:14px;opacity:0;transition:all .3s;pointer-events:none;z-index:999;white-space:nowrap;"></div>
+
+<script>
+function switchTab(tab) {
+  document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+  document.getElementById('page-' + tab).classList.remove('hidden');
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('.tab-btn[onclick="switchTab(\'' + tab + '\')"]').classList.add('active');
+}
+
+function triggerBackup() {
+  const btn = document.querySelector('.btn-primary[onclick="triggerBackup()"]');
+  btn.textContent = '備份中...';
+  btn.disabled = true;
+  setTimeout(() => {
+    btn.textContent = '立即備份';
+    btn.disabled = false;
+    showToast('✅ 備份完成，已保存至 /backups/daily/');
+    document.getElementById('backupStatus').textContent = '上次備份：2026-05-22 16:30（剛剛）— 大小：14.3 MB';
+  }, 1800);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.opacity = '1';
+  t.style.transform = 'translateX(-50%) translateY(0)';
+  setTimeout(() => {
+    t.style.opacity = '0';
+    t.style.transform = 'translateX(-50%) translateY(20px)';
+  }, 2500);
+}
+
+function confirmRestore() {
+  if (confirm('⚠️ 警告：還原作業會覆蓋目前資料庫。\n\n確定要繼續嗎？')) {
+    showToast('🔄 還原功能開發中');
+  }
+}
+
+function filterUsers() {
+  const q = document.getElementById('userSearch').value.toLowerCase();
+  document.querySelectorAll('#userTable tbody tr').forEach(row => {
+    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+</script>
+
+</body>
+</html>

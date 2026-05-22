@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>CaloScanAi - 今日總覽</title>
+<style>
+  :root {
+    --pink-50: #FFF5F7;
+    --pink-100: #FFF0F3;
+    --pink-200: #FFE4EB;
+    --pink-400: #FFB8C9;
+    --pink-500: #FF8FAB;
+    --pink-600: #E8777A;
+    --orange-400: #FB923C;
+    --orange-500: #F97316;
+    --warm-bg: #FFFAF5;
+    --card-bg: #FFFFFF;
+    --text-primary: #2D1B14;
+    --text-secondary: #7C6354;
+    --border: #F0E6E0;
+    --success: #4ADE80;
+    --protein-color: #7C3AED;
+    --carbs-color: #F59E0B;
+    --fat-color: #EF4444;
+    --radius-sm: 8px;
+    --radius-md: 16px;
+    --radius-lg: 24px;
+    --shadow-sm: 0 1px 3px rgba(45,27,20,0.06);
+    --shadow-md: 0 4px 16px rgba(45,27,20,0.10);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--warm-bg);
+    color: var(--text-primary);
+    min-height: 100dvh;
+    padding-bottom: 100px;
+  }
+  /* ── Header ── */
+  .header {
+    background: var(--card-bg);
+    border-bottom: 2px solid var(--border);
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .header-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--pink-600);
+  }
+  .header-date {
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+  /* ── Hero: Calorie Ring ── */
+  .hero {
+    background: var(--card-bg);
+    padding: 28px 20px 24px;
+    text-align: center;
+    border-bottom: 1.5px solid var(--border);
+  }
+  .hero-date {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 20px;
+  }
+  .ring-container {
+    position: relative;
+    width: 180px;
+    height: 180px;
+    margin: 0 auto 16px;
+  }
+  .ring-svg {
+    width: 180px;
+    height: 180px;
+    transform: rotate(-90deg);
+  }
+  .ring-track {
+    fill: none;
+    stroke: var(--pink-100);
+    stroke-width: 14;
+  }
+  .ring-fill {
+    fill: none;
+    stroke: url(#ringGrad);
+    stroke-width: 14;
+    stroke-linecap: round;
+    stroke-dasharray: 440;
+    stroke-dashoffset: 165;
+    transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .ring-center {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    pointer-events: none;
+  }
+  .ring-center .cal-num {
+    font-size: 36px;
+    font-weight: 900;
+    color: var(--pink-600);
+    line-height: 1;
+  }
+  .ring-center .cal-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    margin-top: 4px;
+  }
+  .ring-center .cal-goal {
+    font-size: 12px;
+    color: var(--pink-400);
+    font-weight: 600;
+    margin-top: 2px;
+  }
+  /* ── Macro Cards ── */
+  .macro-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    padding: 16px;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+  .macro-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-md);
+    padding: 14px 10px;
+    text-align: center;
+    border: 1.5px solid var(--border);
+    box-shadow: var(--shadow-sm);
+  }
+  .macro-card .macro-icon {
+    font-size: 20px;
+    margin-bottom: 6px;
+  }
+  .macro-card .macro-val {
+    font-size: 18px;
+    font-weight: 800;
+    margin-bottom: 4px;
+  }
+  .macro-card .macro-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+  }
+  .macro-card.protein .macro-val { color: var(--protein-color); }
+  .macro-card.carbs .macro-val { color: var(--carbs-color); }
+  .macro-card.fat .macro-val { color: var(--fat-color); }
+  .macro-card.cal .macro-val { color: var(--pink-600); }
+  .macro-bar {
+    height: 4px;
+    background: var(--pink-100);
+    border-radius: 2px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+  .macro-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.5s ease;
+  }
+  .macro-card.protein .macro-bar-fill { background: var(--protein-color); }
+  .macro-card.carbs .macro-bar-fill { background: var(--carbs-color); }
+  .macro-card.fat .macro-bar-fill { background: var(--fat-color); }
+  .macro-card.cal .macro-bar-fill { background: var(--pink-500); }
+  /* ── Meal Timeline ── */
+  .timeline { max-width: 480px; margin: 0 auto; padding: 8px 16px 16px; }
+  .timeline-title {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+    padding: 8px 0 12px;
+  }
+  .meal-group { margin-bottom: 20px; }
+  .meal-group-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .meal-group-header .meal-emoji { font-size: 20px; }
+  .meal-group-header .meal-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .meal-group-header .meal-total {
+    margin-left: auto;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--pink-500);
+  }
+  .meal-items { display: flex; flex-direction: column; gap: 8px; }
+  .meal-item {
+    display: flex;
+    align-items: center;
+    background: var(--card-bg);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    border: 1.5px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    gap: 12px;
+  }
+  .meal-item .item-time {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 600;
+    min-width: 40px;
+  }
+  .meal-item .item-info { flex: 1; }
+  .meal-item .item-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .meal-item .item-cals {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    margin-top: 2px;
+  }
+  .meal-item .item-badge {
+    background: var(--pink-100);
+    color: var(--pink-600);
+    font-size: 12px;
+    font-weight: 800;
+    padding: 5px 10px;
+    border-radius: 14px;
+    white-space: nowrap;
+  }
+  .meal-item .item-actions {
+    display: flex;
+    gap: 6px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .meal-item:active .item-actions { opacity: 1; }
+  .item-action-btn {
+    width: 30px; height: 30px;
+    border: 1.5px solid var(--border);
+    background: var(--card-bg);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: all 0.15s;
+  }
+  .item-action-btn:active {
+    background: var(--pink-100);
+    border-color: var(--pink-400);
+    color: var(--pink-600);
+  }
+  /* ── Bottom Add Button ── */
+  .bottom-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    padding: 16px;
+    background: var(--card-bg);
+    border-top: 2px solid var(--border);
+    display: flex;
+    justify-content: center;
+    z-index: 20;
+  }
+  .add-food-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 40px;
+    background: var(--pink-500);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-lg);
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: var(--shadow-md);
+    text-decoration: none;
+    transition: all 0.2s;
+    width: calc(100% - 32px);
+    justify-content: center;
+    max-width: 400px;
+  }
+  .add-food-btn:active { transform: scale(0.97); }
+  /* ── FAB ── */
+  .fab {
+    position: fixed;
+    bottom: 88px;
+    right: 20px;
+    width: 54px;
+    height: 54px;
+    background: var(--orange-500);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    font-size: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-md);
+    cursor: pointer;
+    z-index: 15;
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+  .fab:active { transform: scale(0.9); }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-title">CaloScanAi</div>
+  <div class="header-date">May 22, 2026</div>
+</div>
+
+<!-- Calorie Ring Hero -->
+<div class="hero">
+  <div class="hero-date">📅 今日攝取</div>
+  <div class="ring-container">
+    <svg class="ring-svg" viewBox="0 0 180 180">
+      <defs>
+        <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#FF8FAB"/>
+          <stop offset="100%" stop-color="#FB923C"/>
+        </linearGradient>
+      </defs>
+      <circle class="ring-track" cx="90" cy="90" r="70"/>
+      <circle class="ring-fill" id="ringFill" cx="90" cy="90" r="70"/>
+    </svg>
+    <div class="ring-center">
+      <div class="cal-num" id="calEaten">580</div>
+      <div class="cal-label">kcal</div>
+      <div class="cal-goal">/ 2000 kcal</div>
+    </div>
+  </div>
+</div>
+
+<!-- Macro Cards -->
+<div class="macro-grid">
+  <div class="macro-card protein">
+    <div class="macro-icon">🥩</div>
+    <div class="macro-val" id="macroProtein">25</div>
+    <div class="macro-label">蛋白質</div>
+    <div class="macro-bar"><div class="macro-bar-fill" id="barProtein" style="width:50%"></div></div>
+  </div>
+  <div class="macro-card carbs">
+    <div class="macro-icon">🍚</div>
+    <div class="macro-val" id="macroCarbs">60</div>
+    <div class="macro-label">碳水</div>
+    <div class="macro-bar"><div class="macro-bar-fill" id="barCarbs" style="width:60%"></div></div>
+  </div>
+  <div class="macro-card fat">
+    <div class="macro-icon">🥑</div>
+    <div class="macro-val" id="macroFat">18</div>
+    <div class="macro-label">脂肪</div>
+    <div class="macro-bar"><div class="macro-bar-fill" id="barFat" style="width:45%"></div></div>
+  </div>
+  <div class="macro-card cal">
+    <div class="macro-icon">🔥</div>
+    <div class="macro-val" id="macroCal">580</div>
+    <div class="macro-label">熱量</div>
+    <div class="macro-bar"><div class="macro-bar-fill" id="barCal" style="width:29%"></div></div>
+  </div>
+</div>
+
+<!-- Meal Timeline -->
+<div class="timeline">
+  <div class="timeline-title">⏱ 餐次記錄</div>
+
+  <!-- Breakfast -->
+  <div class="meal-group">
+    <div class="meal-group-header">
+      <span class="meal-emoji">🌅</span>
+      <span class="meal-name">早餐</span>
+      <span class="meal-total">400 kcal</span>
+    </div>
+    <div class="meal-items">
+      <div class="meal-item">
+        <div class="item-time">07:30</div>
+        <div class="item-info">
+          <div class="item-name">蛋餅</div>
+          <div class="item-cals">蛋白質 8g · 碳水 25g · 脂肪 14g</div>
+        </div>
+        <div class="item-badge">280 kcal</div>
+        <div class="item-actions">
+          <button class="item-action-btn" title="編輯">✏️</button>
+          <button class="item-action-btn" title="刪除">🗑️</button>
+        </div>
+      </div>
+      <div class="meal-item">
+        <div class="item-time">07:35</div>
+        <div class="item-info">
+          <div class="item-name">無糖豆漿</div>
+          <div class="item-cals">蛋白質 7g · 碳水 5g · 脂肪 3g</div>
+        </div>
+        <div class="item-badge">120 kcal</div>
+        <div class="item-actions">
+          <button class="item-action-btn" title="編輯">✏️</button>
+          <button class="item-action-btn" title="刪除">🗑️</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lunch -->
+  <div class="meal-group">
+    <div class="meal-group-header">
+      <span class="meal-emoji">☀️</span>
+      <span class="meal-name">午餐</span>
+      <span class="meal-total">720 kcal</span>
+    </div>
+    <div class="meal-items">
+      <div class="meal-item">
+        <div class="item-time">12:15</div>
+        <div class="item-info">
+          <div class="item-name">便當</div>
+          <div class="item-cals">蛋白質 32g · 碳水 90g · 脂肪 22g</div>
+        </div>
+        <div class="item-badge">720 kcal</div>
+        <div class="item-actions">
+          <button class="item-action-btn" title="編輯">✏️</button>
+          <button class="item-action-btn" title="刪除">🗑️</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Snack -->
+  <div class="meal-group">
+    <div class="meal-group-header">
+      <span class="meal-emoji">🍪</span>
+      <span class="meal-name">點心</span>
+      <span class="meal-total">70 kcal</span>
+    </div>
+    <div class="meal-items">
+      <div class="meal-item">
+        <div class="item-time">15:00</div>
+        <div class="item-info">
+          <div class="item-name">茶葉蛋</div>
+          <div class="item-cals">蛋白質 6g · 碳水 2g · 脂肪 5g</div>
+        </div>
+        <div class="item-badge">70 kcal</div>
+        <div class="item-actions">
+          <button class="item-action-btn" title="編輯">✏️</button>
+          <button class="item-action-btn" title="刪除">🗑️</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Bottom Add Button -->
+<div class="bottom-bar">
+  <a href="demo-B-camera-upload.html" class="add-food-btn">＋ 新增食物</a>
+</div>
+
+<!-- FAB Coffee -->
+<a href="#" class="fab" title="快速新增">☕</a>
+
+</body>
+</html>

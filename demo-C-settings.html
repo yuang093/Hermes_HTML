@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>CaloScanAi - 設定</title>
+<style>
+  :root {
+    --pink-50: #FFF5F7;
+    --pink-100: #FFF0F3;
+    --pink-200: #FFE4EB;
+    --pink-400: #FFB8C9;
+    --pink-500: #FF8FAB;
+    --pink-600: #E8777A;
+    --orange-400: #FB923C;
+    --orange-500: #F97316;
+    --warm-bg: #FFFAF5;
+    --card-bg: #FFFFFF;
+    --text-primary: #2D1B14;
+    --text-secondary: #7C6354;
+    --border: #F0E6E0;
+    --success: #4ADE80;
+    --danger: #EF4444;
+    --purple: #8B5CF6;
+    --radius-sm: 8px;
+    --radius-md: 16px;
+    --radius-lg: 24px;
+    --shadow-sm: 0 1px 3px rgba(45,27,20,0.06);
+    --shadow-md: 0 4px 16px rgba(45,27,20,0.10);
+    --shadow-lg: 0 8px 32px rgba(45,27,20,0.14);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--warm-bg);
+    color: var(--text-primary);
+    min-height: 100dvh;
+    padding-bottom: 40px;
+  }
+  /* ── Header ── */
+  .header {
+    background: var(--card-bg);
+    border-bottom: 2px solid var(--border);
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .back-btn {
+    width: 36px; height: 36px;
+    border: 2px solid var(--border);
+    background: var(--card-bg);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: all 0.15s;
+  }
+  .back-btn:active { background: var(--pink-100); border-color: var(--pink-400); }
+  .header-title { font-size: 18px; font-weight: 800; color: var(--pink-600); }
+
+  /* ── Section ── */
+  .section { padding: 16px; max-width: 480px; margin: 0 auto; }
+  .section-title {
+    font-size: 12px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--text-secondary);
+    margin-bottom: 10px;
+  }
+
+  /* ── Profile Card ── */
+  .profile-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    border: 2px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 8px;
+  }
+  .avatar {
+    width: 60px; height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--pink-400), var(--pink-600));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: 900; color: #fff;
+    flex-shrink: 0;
+  }
+  .profile-info { flex: 1; min-width: 0; }
+  .profile-name { font-size: 18px; font-weight: 800; color: var(--text-primary); margin-bottom: 4px; }
+  .profile-email { font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .role-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px; font-weight: 700;
+    background: var(--pink-100);
+    color: var(--pink-600);
+    border: 1.5px solid var(--pink-200);
+  }
+
+  /* ── Calorie Goal ── */
+  .goal-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    border: 2px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 8px;
+  }
+  .goal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .goal-label { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+  .goal-value { font-size: 36px; font-weight: 900; color: var(--pink-600); line-height: 1; text-align: center; }
+  .goal-unit { font-size: 14px; color: var(--text-secondary); font-weight: 600; text-align: center; }
+  .goal-display { text-align: center; margin-bottom: 20px; }
+  input[type="range"] {
+    width: 100%; height: 8px;
+    -webkit-appearance: none;
+    background: var(--pink-100);
+    border-radius: 4px;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--pink-500);
+    border: 3px solid #fff;
+    box-shadow: var(--shadow-md);
+    cursor: pointer;
+  }
+  .range-labels { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-secondary); font-weight: 600; margin-top: 8px; }
+
+  /* ── Style Selector ── */
+  .style-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .style-card {
+    border: 2.5px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 12px 8px;
+    background: var(--card-bg);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    position: relative;
+  }
+  .style-card:active { transform: scale(0.97); }
+  .style-card.selected { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(139,92,246,0.15); }
+  .style-card .check {
+    position: absolute; top: 6px; right: 6px;
+    width: 20px; height: 20px;
+    background: var(--purple);
+    border-radius: 50%;
+    display: none;
+    align-items: center; justify-content: center;
+    font-size: 11px; color: #fff;
+  }
+  .style-card.selected .check { display: flex; }
+  .style-preview {
+    height: 48px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: #fff;
+  }
+  .style-name { font-size: 12px; font-weight: 700; color: var(--text-primary); }
+  .style-desc { font-size: 10px; color: var(--text-secondary); margin-top: 2px; }
+  /* V1 preview */
+  .style-preview.v1 { background: linear-gradient(135deg, #FFF5F7, #FFE4EB); border: 1px solid #FFB8C9; }
+  .style-preview.v1::after { content: '● ● ●'; color: var(--pink-400); letter-spacing: 2px; font-size: 14px; }
+  /* V3 preview */
+  .style-preview.v3 { background: linear-gradient(135deg, #FEF3C7, #FED7AA); border: 1px solid #FBBF24; }
+  .style-preview.v3::after { content: '▬ ▬ ▬'; color: #D97706; letter-spacing: 2px; font-size: 14px; }
+  /* V5 preview */
+  .style-preview.v5 { background: #000; border: 2px solid #fff; }
+  .style-preview.v5::after { content: '■ ■ ■'; color: #FF8FAB; letter-spacing: 2px; font-size: 14px; }
+
+  /* ── Theme ── */
+  .theme-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    border: 2px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    padding: 16px 20px;
+    display: flex;
+    gap: 10px;
+  }
+  .theme-btn {
+    flex: 1;
+    padding: 10px 8px;
+    border-radius: var(--radius-md);
+    border: 2px solid var(--border);
+    background: var(--card-bg);
+    font-size: 13px; font-weight: 700;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .theme-btn.active { background: var(--pink-500); border-color: var(--pink-500); color: #fff; box-shadow: var(--shadow-sm); }
+  .theme-btn:active:not(.active) { background: var(--pink-50); }
+
+  /* ── Save Button ── */
+  .btn-primary {
+    width: 100%;
+    padding: 16px;
+    background: var(--pink-500);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 16px; font-weight: 700;
+    cursor: pointer;
+    box-shadow: var(--shadow-md);
+    transition: all 0.2s;
+    margin-top: 8px;
+  }
+  .btn-primary:active { transform: scale(0.98); }
+
+  /* ── Danger Zone ── */
+  .danger-zone {
+    background: #FEF2F2;
+    border: 2px solid #FECACA;
+    border-radius: var(--radius-lg);
+    padding: 16px 20px;
+    text-align: center;
+  }
+  .danger-zone .section-title { color: var(--danger); }
+  .delete-btn {
+    background: none; border: none;
+    color: var(--danger); font-size: 15px; font-weight: 700;
+    cursor: pointer; text-decoration: underline;
+    padding: 8px;
+  }
+
+  /* ── Version ── */
+  .version {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-secondary);
+    padding: 24px 16px 8px;
+    opacity: 0.6;
+  }
+
+  /* ── Modal ── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: none; align-items: center; justify-content: center;
+    z-index: 50; padding: 20px;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    padding: 28px 24px;
+    max-width: 340px; width: 100%;
+    box-shadow: var(--shadow-lg);
+    text-align: center;
+  }
+  .modal-icon { font-size: 48px; margin-bottom: 16px; }
+  .modal h3 { font-size: 18px; font-weight: 800; margin-bottom: 8px; color: var(--text-primary); }
+  .modal p { font-size: 14px; color: var(--text-secondary); margin-bottom: 24px; line-height: 1.5; }
+  .modal-btns { display: flex; gap: 12px; }
+  .modal-cancel {
+    flex: 1; padding: 14px;
+    background: var(--card-bg); border: 2px solid var(--border);
+    border-radius: var(--radius-md); font-size: 15px; font-weight: 700;
+    color: var(--text-primary); cursor: pointer;
+  }
+  .modal-confirm {
+    flex: 1; padding: 14px;
+    background: var(--danger); border: none;
+    border-radius: var(--radius-md); font-size: 15px; font-weight: 700;
+    color: #fff; cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <a href="demo-A-dashboard.html" class="back-btn">←</a>
+  <span class="header-title">設定</span>
+</div>
+
+<div class="section">
+
+  <!-- Profile -->
+  <div class="section-title">個人資料</div>
+  <div class="profile-card">
+    <div class="avatar">YK</div>
+    <div class="profile-info">
+      <div class="profile-name">Yuki Kim</div>
+      <div class="profile-email">yuki.kim@example.com</div>
+      <span class="role-badge">Premium 會員</span>
+    </div>
+  </div>
+
+  <!-- Calorie Goal -->
+  <div class="section-title" style="margin-top:16px;">每日熱量目標</div>
+  <div class="goal-card">
+    <div class="goal-display">
+      <div class="goal-value" id="goalNum">2000</div>
+      <div class="goal-unit">kcal / 每日</div>
+    </div>
+    <input type="range" id="goalSlider" min="1200" max="4000" value="2000" step="50">
+    <div class="range-labels"><span>1200</span><span>4000</span></div>
+  </div>
+
+  <!-- UI Style -->
+  <div class="section-title" style="margin-top:16px;">UI 風格</div>
+  <div class="style-grid">
+    <div class="style-card selected" data-style="v1" onclick="selectStyle(this)">
+      <div class="check">✓</div>
+      <div class="style-preview v1"></div>
+      <div class="style-name">Sakura</div>
+      <div class="style-desc">柔和粉白</div>
+    </div>
+    <div class="style-card" data-style="v3" onclick="selectStyle(this)">
+      <div class="check">✓</div>
+      <div class="style-preview v3"></div>
+      <div class="style-name">Editorial</div>
+      <div class="style-desc">暖色調</div>
+    </div>
+    <div class="style-card" data-style="v5" onclick="selectStyle(this)">
+      <div class="check">✓</div>
+      <div class="style-preview v5"></div>
+      <div class="style-name">Neo-Brutal</div>
+      <div class="style-desc">大膽幾何</div>
+    </div>
+  </div>
+
+  <!-- Theme -->
+  <div class="section-title" style="margin-top:16px;">主題</div>
+  <div class="theme-card">
+    <button class="theme-btn active" onclick="selectTheme(this,'light')">☀️ Light</button>
+    <button class="theme-btn" onclick="selectTheme(this,'dark')">🌙 Dark</button>
+    <button class="theme-btn" onclick="selectTheme(this,'system')">⚙️ System</button>
+  </div>
+
+  <!-- Save -->
+  <button class="btn-primary" onclick="saveSettings()">儲存設定</button>
+
+  <!-- Danger Zone -->
+  <div class="danger-zone" style="margin-top:24px;">
+    <div class="section-title">危險操作</div>
+    <button class="delete-btn" onclick="showModal()">刪除帳號</button>
+  </div>
+
+  <div class="version">CaloScanAi v2.4.1</div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal">
+    <div class="modal-icon">⚠️</div>
+    <h3>刪除帳號</h3>
+    <p>確定要刪除你的 CaloScanAi 帳號嗎？<br>此操作不可逆，所有資料將永久消失。</p>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="hideModal()">取消</button>
+      <button class="modal-confirm" onclick="confirmDelete()">確定刪除</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const slider = document.getElementById('goalSlider');
+  const goalNum = document.getElementById('goalNum');
+
+  slider.addEventListener('input', () => {
+    goalNum.textContent = slider.value;
+  });
+
+  function selectStyle(el) {
+    document.querySelectorAll('.style-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+
+  function selectTheme(btn, theme) {
+    document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  function saveSettings() {
+    const modal = document.getElementById('deleteModal');
+    // Show success toast
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;top:24px;left:50%;transform:translateX(-50%) translateY(0);background:#4ADE80;color:#fff;padding:14px 28px;border-radius:24px;font-size:15px;font-weight:700;box-shadow:0 8px 32px rgba(0,0,0,0.15);z-index:100;display:flex;align-items:center;gap:10px;transition:transform 0.4s;white-space:nowrap;';
+    toast.textContent = '✓ 設定已儲存';
+    document.body.appendChild(toast);
+    setTimeout(() => { toast.style.transform = 'translateX(-50%) translateY(-80px)'; setTimeout(() => toast.remove(), 400); }, 2000);
+  }
+
+  function showModal() {
+    document.getElementById('deleteModal').classList.add('active');
+  }
+
+  function hideModal() {
+    document.getElementById('deleteModal').classList.remove('active');
+  }
+
+  function confirmDelete() {
+    hideModal();
+    // In real app, would navigate away
+  }
+</script>
+</body>
+</html>
